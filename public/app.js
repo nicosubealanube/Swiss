@@ -31,12 +31,261 @@
     "Detalle": { tag: "Vacío", cls: "source-auto" },
   };
 
+  // Código completo de Office Script (TypeScript para Excel Online en SharePoint)
+  const OFFICE_SCRIPT_CODE = `/**
+ * Office Script para Excel en SharePoint - Automatización ABM Convenios (Swiss Medical)
+ * Recibe el cuerpo del mail y el PDF adjunto desde Power Automate y agrega la fila en el Excel.
+ */
+function main(
+  workbook: ExcelScript.Workbook,
+  emailBody: string = "",
+  receivedDate: string = "",
+  pdfBase64: string = ""
+) {
+  const rawPdf = decodeBase64ToLatin1(pdfBase64);
+  const blocks = extractBlocksFromPdf(rawPdf);
+  const pdf = parseFormularioBlocks(blocks);
+  const mail = parseEmailBody(emailBody, receivedDate);
+
+  const hoy = formatTodayDDMMYYYY();
+  const fechaRecepcion = mail.fechaRecepcion || (pdf.fechaFormulario ? pdf.fechaFormulario.split(" ")[0] : hoy);
+
+  let valorRef: number | string = mail.valorReferencia;
+  if (valorRef === "" && typeof pdf.importePresupuestado === "number" && typeof pdf.importeExcepcion === "number") {
+    valorRef = Number((pdf.importePresupuestado - pdf.importeExcepcion).toFixed(2));
+  }
+
+  let usuario = "MV";
+  if (pdf.solicitante) {
+    const words = pdf.solicitante.trim().split(/\\s+/);
+    if (words.length >= 2) {
+      usuario = (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+  }
+  const gerencia = mail.gerenciaFirma || "Gerencia de Gestión de Prestadores Interior";
+  const nLlamado = pdf.nroTramite || mail.tramiteBody || "";
+
+  const sheet = workbook.getActiveWorksheet();
+  const usedRange = sheet.getUsedRange();
+  const lastRowIndex = usedRange ? usedRange.getRowCount() : 1;
+
+  // Calcular Número de ingreso (+1 respecto de la fila anterior en Columna A)
+  let nextIngreso: number | string = 1;
+  if (lastRowIndex >= 2) {
+    const prevVal = sheet.getCell(lastRowIndex - 1, 0).getValue();
+    const parsedNum = Number(prevVal);
+    if (!isNaN(parsedNum) && parsedNum > 0) {
+      nextIngreso = parsedNum + 1;
+    }
+  }
+
+  const newRowValues: (string | number)[][] = [[
+    nextIngreso,
+    fechaRecepcion,
+    pdf.vigenciaDesde,
+    pdf.vigenciaHasta,
+    pdf.numeroSocio,
+    pdf.numeroIntegrante,
+    pdf.codigoPrestador,
+    pdf.nombrePrestador,
+    mail.numeroConvenio,
+    pdf.codigoPrestacion,
+    pdf.nombrePrestacion,
+    valorRef,
+    pdf.importePresupuestado,
+    pdf.importeExcepcion,
+    pdf.importeALiquidar,
+    gerencia,
+    usuario,
+    hoy,
+    nLlamado ? Number(nLlamado) : "",
+    pdf.tipoExcepcion,
+    pdf.motivoExcepcion,
+    "",
+    ""
+  ]];
+
+  const tables = sheet.getTables();
+  if (tables.length > 0) {
+    tables[0].addRow(-1, newRowValues[0]);
+  } else {
+    const targetRange = sheet.getRangeByIndexes(lastRowIndex, 0, 1, newRowValues[0].length);
+    targetRange.setValues(newRowValues);
+  }
+}
+
+function decodeBase64ToLatin1(b64: string): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const clean = (b64 || "").replace(/[^A-Za-z0-9+/=]/g, "");
+  let output = "";
+  let i = 0;
+  while (i < clean.length) {
+    const enc1 = chars.indexOf(clean.charAt(i++));
+    const enc2 = chars.indexOf(clean.charAt(i++));
+    const enc3 = chars.indexOf(clean.charAt(i++));
+    const enc4 = chars.indexOf(clean.charAt(i++));
+    const chr1 = (enc1 << 2) | (enc2 >> 4);
+    const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+    const chr3 = ((enc3 & 3) << 6) | enc4;
+    output += String.fromCharCode(chr1);
+    if (enc3 !== 64 && enc3 !== -1) output += String.fromCharCode(chr2);
+    if (enc4 !== 64 && enc4 !== -1) output += String.fromCharCode(chr3);
+  }
+  return output;
+}
+
+function extractBlocksFromPdf(rawLatin1: string): string[] {
+  const blocks: string[] = [];
+  const streamRegex = /stream\\r?\\n([\\s\\S]*?)\\r?\\nendstream/g;
+  let sm: RegExpExecArray | null;
+  while ((sm = streamRegex.exec(rawLatin1)) !== null) {
+    const content = sm[1];
+    if (content.indexOf("BT") !== -1 && content.indexOf("Tj") !== -1) {
+      const btRegex = /BT\\s+([\\s\\S]*?)\\s+ET/g;
+      let bm: RegExpExecArray | null;
+      while ((bm = btRegex.exec(content)) !== null) {
+        const tjRegex = /\\((.*?)\\)\\s*Tj/g;
+        let tm: RegExpExecArray | null;
+        const parts: string[] = [];
+        while ((tm = tjRegex.exec(bm[1])) !== null) {
+          const clean = tm[1].replace(/\\\\\\(/g, "(").replace(/\\\\\\)/g, ")").replace(/\\s+/g, " ").trim();
+          if (clean) parts.push(clean);
+        }
+        if (parts.length > 0) blocks.push(parts.join(" "));
+      }
+    }
+  }
+  return blocks;
+}
+
+function parseMoney(raw: string): number | string {
+  const cleaned = (raw || "").replace(/[^\\d.,-]/g, "").trim();
+  if (!cleaned) return "";
+  const norm = cleaned.indexOf(",") > cleaned.indexOf(".") && cleaned.indexOf(".") !== -1
+    ? cleaned.replace(/\\./g, "").replace(",", ".")
+    : cleaned.replace(/,/g, "");
+  const num = Number(norm);
+  return isNaN(num) ? "" : num;
+}
+
+function parseFormularioBlocks(blocks: string[]) {
+  const res = {
+    nroTramite: "",
+    fechaFormulario: "",
+    solicitante: "",
+    tipoExcepcion: "Al Prestador",
+    motivoExcepcion: "",
+    codigoPrestador: "" as number | string,
+    nombrePrestador: "",
+    numeroSocio: "" as number | string,
+    numeroIntegrante: "" as number | string,
+    codigoPrestacion: "" as number | string,
+    nombrePrestacion: "",
+    importeExcepcion: "" as number | string,
+    importePresupuestado: "" as number | string,
+    importeALiquidar: "" as number | string,
+    vigenciaDesde: "",
+    vigenciaHasta: ""
+  };
+  let section = "";
+  for (let i = 0; i < blocks.length; i++) {
+    const tok = (blocks[i] || "").trim();
+    const next = i + 1 < blocks.length ? (blocks[i + 1] || "").trim() : "";
+    if (tok === "Datos del Prestador" || tok === "Datos del Afiliado" || tok === "Detalle de la excepción a otorgar") {
+      section = tok;
+      continue;
+    }
+    if (tok === "Nro Trámite:") { res.nroTramite = next; i++; }
+    else if (tok === "Fecha:" && !res.fechaFormulario) { res.fechaFormulario = next; i++; }
+    else if (tok === "Solicitante:") { res.solicitante = next; i++; }
+    else if (tok === "Descripción:") { res.motivoExcepcion = next; i++; }
+    else if (tok === "Código:" && section.indexOf("Prestador") !== -1) { res.codigoPrestador = Number(next) || next; i++; }
+    else if (tok === "Apellido y Nombre / Razón Social:") { res.nombrePrestador = next; i++; }
+    else if (tok === "Contra/Inte:") {
+      const m = next.match(/0*(\\d+)\\s*\\/\\s*0*(\\d+)/);
+      if (m) { res.numeroSocio = Number(m[1]); res.numeroIntegrante = Number(m[2]); }
+      i++;
+    }
+    else if (tok === "Prestación:") {
+      const m = next.match(/^\\s*(\\d+)\\s*-\\s*(.+)$/);
+      if (m) { res.codigoPrestacion = Number(m[1]); res.nombrePrestacion = m[2].trim(); }
+      i++;
+    }
+    else if (tok === "Importe de la excepción:") { res.importeExcepcion = parseMoney(next); i++; }
+    else if (tok === "Importe presupuestado:") { res.importePresupuestado = parseMoney(next); i++; }
+    else if (tok === "Importe a liquidar:") { res.importeALiquidar = parseMoney(next); i++; }
+    else if (tok === "Fecha desde:") { res.vigenciaDesde = next; i++; }
+    else if (tok === "Fecha hasta:") { res.vigenciaHasta = next; i++; }
+  }
+  return res;
+}
+
+function parseEmailBody(body: string, receivedDate: string) {
+  const cleanText = (body || "")
+    .replace(/<\\/(td|th|tr|p|div)>/gi, "\\n")
+    .replace(/<br\\s*\\/?>/gi, "\\n")
+    .replace(/<[^>]+>/g, " ");
+  const tokens = cleanText.split(/\\r?\\n|\\t/).map(s => s.replace(/\\s+/g, " ").trim()).filter(Boolean);
+
+  let numeroConvenio: number | string = "";
+  let valorReferencia: number | string = "";
+  for (let i = 0; i < tokens.length; i++) {
+    if (/Convenio\\s*\\(\\s*1\\s*\\)/i.test(tokens[i])) {
+      const m = tokens[i].match(/Convenio\\s*\\(\\s*1\\s*\\)\\s*(\\d+)/i);
+      if (m) numeroConvenio = Number(m[1]);
+      else if (i + 1 < tokens.length && /^\\d+$/.test(tokens[i + 1])) numeroConvenio = Number(tokens[i + 1]);
+    }
+    if (/Valor\\s+de\\s+referencia\\s*\\(\\s*2\\s*\\)/i.test(tokens[i])) {
+      const rem = tokens[i].replace(/.*Valor\\s+de\\s+referencia\\s*\\(\\s*2\\s*\\)/i, "");
+      const cands = [rem, tokens[i + 1] || "", tokens[i + 2] || ""];
+      for (const c of cands) {
+        const amt = parseMoney(c.split(/Prestador/i)[0]);
+        if (amt !== "") { valorReferencia = amt; break; }
+      }
+    }
+  }
+  let fechaRecepcion = "";
+  if (receivedDate) {
+    const dt = new Date(receivedDate);
+    if (!isNaN(dt.getTime())) {
+      const d = ("0" + dt.getDate()).slice(-2);
+      const m = ("0" + (dt.getMonth() + 1)).slice(-2);
+      fechaRecepcion = d + "/" + m + "/" + dt.getFullYear();
+    }
+  }
+  return {
+    fechaRecepcion,
+    numeroConvenio,
+    valorReferencia,
+    tramiteBody: "",
+    gerenciaFirma: "Gerencia de Gestión de Prestadores Interior"
+  };
+}
+
+function formatTodayDDMMYYYY(): string {
+  const dt = new Date();
+  const d = ("0" + dt.getDate()).slice(-2);
+  const m = ("0" + (dt.getMonth() + 1)).slice(-2);
+  return d + "/" + m + "/" + dt.getFullYear();
+}`;
+
   // Estado de la aplicación
   let currentPdfData = {};
   let batchRows = [];
   const previewInputs = {};
 
   // Elementos del DOM
+  const btnModeManual = document.getElementById("btnModeManual");
+  const btnModeAuto = document.getElementById("btnModeAuto");
+  const autoSetupView = document.getElementById("autoSetupView");
+  const manualAssistView = document.getElementById("manualAssistView");
+
+  const btnCopyExcelScript = document.getElementById("btnCopyExcelScript");
+  const btnToggleScriptPreview = document.getElementById("btnToggleScriptPreview");
+  const excelScriptPre = document.getElementById("excelScriptPre");
+  const btnCopyApiUrl = document.getElementById("btnCopyApiUrl");
+  const apiEndpointUrl = document.getElementById("apiEndpointUrl");
+
   const decimalSeparatorSelect = document.getElementById("decimalSeparatorSelect");
   const defaultGerenciaInput = document.getElementById("defaultGerenciaInput");
   const fechaCargaInput = document.getElementById("fechaCargaInput");
@@ -54,10 +303,6 @@
   const previewFieldsGrid = document.getElementById("previewFieldsGrid");
   const btnAddRow = document.getElementById("btnAddRow");
   const btnClearInputs = document.getElementById("btnClearInputs");
-
-  const btnToggleAutomate = document.getElementById("btnToggleAutomate");
-  const btnCloseAutomate = document.getElementById("btnCloseAutomate");
-  const automatePanel = document.getElementById("automatePanel");
 
   const batchTableHeader = document.getElementById("batchTableHeader");
   const batchTableBody = document.getElementById("batchTableBody");
@@ -87,6 +332,13 @@
     });
     defaultGerenciaInput.addEventListener("input", recomputePreview);
     fechaCargaInput.addEventListener("input", recomputePreview);
+
+    if (excelScriptPre) {
+      excelScriptPre.textContent = OFFICE_SCRIPT_CODE;
+    }
+    if (apiEndpointUrl && window.location.origin.startsWith("http")) {
+      apiEndpointUrl.textContent = `${window.location.origin}/api/procesar`;
+    }
   }
 
   function buildPreviewGrid() {
@@ -334,7 +586,55 @@
     recomputePreview();
   }
 
-  // Eventos
+  // Navegación entre modo Manual Asistido y Guía 100% Automático
+  btnModeManual.addEventListener("click", () => {
+    btnModeManual.classList.add("active");
+    btnModeAuto.classList.remove("active");
+    manualAssistView.classList.remove("hidden");
+    autoSetupView.classList.add("hidden");
+  });
+
+  btnModeAuto.addEventListener("click", () => {
+    btnModeAuto.classList.add("active");
+    btnModeManual.classList.remove("active");
+    autoSetupView.classList.remove("hidden");
+    manualAssistView.classList.add("hidden");
+  });
+
+  document.querySelectorAll(".method-tab").forEach((tabBtn) => {
+    tabBtn.addEventListener("click", () => {
+      document.querySelectorAll(".method-tab").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll(".method-content").forEach((c) => c.classList.add("hidden"));
+      tabBtn.classList.add("active");
+      const targetId = tabBtn.getAttribute("data-target");
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) targetEl.classList.remove("hidden");
+    });
+  });
+
+  if (btnCopyExcelScript) {
+    btnCopyExcelScript.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(OFFICE_SCRIPT_CODE);
+      showToast(
+        "¡Código para Excel copiado! Ahora pegalo con Ctrl + V en la pestaña 'Automatizar -> Nuevo script' de tu Excel en SharePoint."
+      );
+    });
+  }
+
+  if (btnToggleScriptPreview) {
+    btnToggleScriptPreview.addEventListener("click", () => {
+      excelScriptPre.classList.toggle("hidden");
+    });
+  }
+
+  if (btnCopyApiUrl) {
+    btnCopyApiUrl.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(apiEndpointUrl.textContent);
+      showToast("URL del conector copiada al portapapeles.");
+    });
+  }
+
+  // Eventos del cargador
   pdfDropzone.addEventListener("click", () => pdfFileInput.click());
   pdfDropzone.addEventListener("dragover", (e) => {
     e.preventDefault();
@@ -403,13 +703,6 @@
   btnClearTable.addEventListener("click", () => {
     batchRows = [];
     renderBatchTable();
-  });
-
-  btnToggleAutomate.addEventListener("click", () => {
-    automatePanel.classList.toggle("hidden");
-  });
-  btnCloseAutomate.addEventListener("click", () => {
-    automatePanel.classList.add("hidden");
   });
 
   // Inicializar

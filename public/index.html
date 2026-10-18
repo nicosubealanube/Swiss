@@ -19,195 +19,341 @@
       </div>
     </div>
     <div class="topbar-actions">
-      <button type="button" id="btnToggleAutomate" class="btn btn-secondary">
-        Guía Power Automate (100% Automático)
+      <button type="button" id="btnModeManual" class="btn btn-mode active">
+        Carga Asistida en esta Web
+      </button>
+      <button type="button" id="btnModeAuto" class="btn btn-mode">
+        Configurar Modo 100% Automático (Paso a Paso)
       </button>
     </div>
   </header>
 
   <main class="container">
-    <!-- Panel desplegable para conexión 100% automática con Power Automate + Netlify -->
-    <section id="automatePanel" class="card automate-panel hidden">
-      <div class="card-header">
-        <h2>Conexión 100% Automática (Power Automate + Netlify API)</h2>
-        <button type="button" id="btnCloseAutomate" class="btn-close">&times;</button>
-      </div>
-      <p class="help-text">
-        Esta aplicación incluye el endpoint serverless <code>POST /api/procesar</code> en Netlify. Si conectás un flujo de
-        <strong>Power Automate</strong> en la cuenta de Office 365 que tiene acceso a <code>ABM.Convenios@swissmedical.com.ar</code>
-        y al SharePoint, las filas se cargan solas apenas entra el email:
-      </p>
-      <ol class="steps-list">
-        <li>
-          <strong>Trigger en Power Automate:</strong> <em>"When a new email arrives in a shared mailbox (V2)"</em>
-          apuntando a <code>ABM.Convenios@swissmedical.com.ar</code> (con <em>Include Attachments = Yes</em>).
-        </li>
-        <li>
-          <strong>Acción HTTP POST a esta web en Netlify:</strong> Enviar a <code>https://swissmedical.netlify.app/api/procesar</code>
-          el cuerpo del correo (<code>emailBody</code>), la fecha (<code>receivedDate</code>) y los bytes del adjunto PDF en Base64 (<code>pdfBase64</code>).
-        </li>
-        <li>
-          <strong>Acción Excel Online (Business):</strong> <em>"Add a row into a table"</em> seleccionando el archivo Excel en SharePoint
-          y mapeando el objeto <code>rowObject</code> devuelto por Netlify.
-        </li>
-      </ol>
-    </section>
+    <div id="toastBanner" class="toast hidden"></div>
 
-    <!-- Barra de configuración rápida persistente -->
-    <section class="config-bar card">
-      <div class="config-item">
-        <label for="decimalSeparatorSelect">Separador decimal al pegar en Excel</label>
-        <select id="decimalSeparatorSelect">
-          <option value=",">Coma decimal (ej. 457650,00 - Excel Español)</option>
-          <option value=".">Punto decimal (ej. 457650.00)</option>
-        </select>
-      </div>
-      <div class="config-item">
-        <label for="defaultGerenciaInput">Gerencia Autorizante por defecto</label>
-        <input type="text" id="defaultGerenciaInput" value="Gerencia de Gestión de Prestadores Interior" />
-      </div>
-      <div class="config-item">
-        <label for="fechaCargaInput">Fecha de la carga</label>
-        <input type="text" id="fechaCargaInput" placeholder="DD/MM/YYYY" />
-      </div>
-    </section>
+    <!-- ================================================================== -->
+    <!-- VISTA 1: GUÍA PASO A PASO PARA DEJARLO 100% AUTOMÁTICO EN SU PC     -->
+    <!-- ================================================================== -->
+    <section id="autoSetupView" class="hidden">
+      <div class="card guide-hero">
+        <h2>Cómo dejar la carga 100% Automática desde tu computadora de Swiss Medical</h2>
+        <p>
+          Con esta configuración, cada vez que entre un email con un PDF a
+          <strong>ABM.Convenios@swissmedical.com.ar</strong>, los datos se van a escribir
+          <strong>solos en el Excel de SharePoint</strong> sin que tengas que abrir esta página ni copiar nada.
+          Solo hay que configurarlo <strong>una única vez</strong> siguiendo estos 2 pasos simples desde tu navegador:
+        </p>
 
-    <!-- Grilla de entrada: Paso 1 (Mail + PDF) y Paso 2 (Vista previa de los 22 campos) -->
-    <div class="workspace-grid">
-      <!-- Columna Izquierda: Entrada del Email y PDF -->
-      <section class="card">
-        <div class="step-header">
-          <span class="step-badge">Paso 1</span>
-          <h2>Datos del Email y Formulario PDF Adjunto</h2>
+        <div class="method-tabs">
+          <button type="button" class="method-tab active" data-target="tabMethodExcel">
+            Opción A (Recomendada): Con Script de Excel + Power Automate (No requiere licencia extra)
+          </button>
+          <button type="button" class="method-tab" data-target="tabMethodHttp">
+            Opción B: Conector directo Power Automate &rarr; Netlify
+          </button>
         </div>
+      </div>
 
-        <!-- Dropzone PDF -->
-        <div id="pdfDropzone" class="dropzone">
-          <input type="file" id="pdfFileInput" accept=".pdf,.eml" hidden />
-          <div class="dropzone-content">
-            <div class="dropzone-icon">PDF</div>
-            <div>
-              <p class="dropzone-title" id="pdfStatusTitle">
-                Arrastrá acá el archivo <strong>.PDF</strong> adjunto ("Formulario de Excepciones")
-              </p>
-              <p class="dropzone-sub" id="pdfStatusSub">
-                O hacé clic para seleccionarlo desde tu computadora
-              </p>
+      <!-- OPCIÓN A: EXCEL OFFICE SCRIPT + POWER AUTOMATE -->
+      <div id="tabMethodExcel" class="method-content">
+        <div class="guide-grid">
+          <!-- Parte 1: En el Excel de SharePoint -->
+          <div class="card guide-card">
+            <div class="step-header">
+              <span class="step-badge">Parte 1 (En tu Excel)</span>
+              <h3>Pegar el extractor adentro del Excel de SharePoint</h3>
             </div>
+            <p class="help-text">
+              Esto le enseña a tu archivo Excel a leer el correo y el PDF por sí solo. Se hace una sola vez:
+            </p>
+            <ol class="friendly-steps">
+              <li>
+                Abrí en tu navegador el archivo <strong>Excel en SharePoint</strong> donde cargan siempre las excepciones.
+              </li>
+              <li>
+                Arriba de todo en el menú del Excel (al lado de <em>Inicio, Insertar, Datos, Vista</em>), hacé clic en la pestaña
+                <strong>Automatizar</strong> (o <em>Automate</em>) y elegí <strong>Nuevo script</strong> (<em>New Script</em>).
+              </li>
+              <li>
+                A la derecha de tu Excel se va a abrir un panel con unas líneas escritas. <strong>Borrá todo</strong> lo que dice ahí adentro.
+              </li>
+              <li>
+                Tocá este botón verde para copiar nuestro código y pegalo ahí adentro con <strong>Ctrl + V</strong>:
+                <div class="code-copy-box">
+                  <button type="button" id="btnCopyExcelScript" class="btn btn-success">
+                    Copiar Código para pegar en el Excel
+                  </button>
+                  <button type="button" id="btnToggleScriptPreview" class="btn btn-outline">
+                    Ver / Ocultar código
+                  </button>
+                </div>
+                <pre id="excelScriptPre" class="code-preview hidden"></pre>
+              </li>
+              <li>
+                Arriba del panel hacé clic en el nombre del script, ponele <strong><code>CargarExcepcionABM</code></strong> y tocá el botón
+                <strong>Guardar script</strong> (<em>Save script</em>).
+              </li>
+            </ol>
+          </div>
+
+          <!-- Parte 2: En Power Automate -->
+          <div class="card guide-card">
+            <div class="step-header">
+              <span class="step-badge">Parte 2 (En Power Automate)</span>
+              <h3>Conectar la casilla de correo con el Excel</h3>
+            </div>
+            <p class="help-text">
+              Ahora le decimos a Microsoft que cada vez que entre un mail en <code>ABM.Convenios@swissmedical.com.ar</code>, se lo pase al Excel:
+            </p>
+            <ol class="friendly-steps">
+              <li>
+                En otra pestaña del navegador, entrá a
+                <a href="https://make.powerautomate.com" target="_blank" rel="noopener"><strong>make.powerautomate.com</strong></a>
+                (entra directo con tu usuario de Swiss Medical).
+              </li>
+              <li>
+                En el menú izquierdo tocá <strong>Crear</strong> (<em>Create</em>) &rarr;
+                <strong>Flujo de nube automatizado</strong> (<em>Automated cloud flow</em>).
+              </li>
+              <li>
+                En nombre ponele <code>ABM Convenios a Excel</code>. En el buscador de abajo escribí <strong>"shared mailbox"</strong> o
+                <strong>"buzón compartido"</strong> y elegí:
+                <br />
+                <strong>"Cuando llega un correo electrónico nuevo a un buzón compartido (V2)"</strong> (de Office 365 Outlook) y tocá <em>Crear</em>.
+              </li>
+              <li>
+                Hacé clic en esa primera cajita que apareció y completá:
+                <ul>
+                  <li><strong>Dirección del buzón original:</strong> <code>ABM.Convenios@swissmedical.com.ar</code></li>
+                  <li><strong>Carpeta:</strong> <code>Inbox</code> (Bandeja de entrada)</li>
+                  <li><strong>Incluir datos adjuntos (Include Attachments):</strong> Cambialo a <strong>Sí (Yes)</strong></li>
+                  <li><strong>Solo con datos adjuntos (Only with Attachments):</strong> Cambialo a <strong>Sí (Yes)</strong></li>
+                </ul>
+              </li>
+              <li>
+                Tocá el signo <strong>(+) Nuevo paso</strong> abajo de esa cajita, buscá <strong>Excel Online (Empresas)</strong> y elegí la acción
+                <strong>"Ejecutar script" (Run script)</strong>.
+              </li>
+              <li>
+                En esa cajita de Excel seleccioná:
+                <ul>
+                  <li><strong>Ubicación / Biblioteca / Archivo:</strong> Buscá el sitio de SharePoint y seleccioná el archivo Excel de Excepciones.</li>
+                  <li><strong>Script:</strong> Elegí <strong><code>CargarExcepcionABM</code></strong> (el que guardaste en la Parte 1).</li>
+                </ul>
+              </li>
+              <li>
+                Te van a aparecer los casilleros que pide el script. Hacé clic en cada uno y elegí del rayito (Contenido dinámico del correo):
+                <ul>
+                  <li><strong><code>emailBody</code>:</strong> Elegí <strong>Cuerpo (Body)</strong> del correo.</li>
+                  <li><strong><code>receivedDate</code>:</strong> Elegí <strong>Hora de recepción (Received Time)</strong>.</li>
+                  <li><strong><code>pdfBase64</code>:</strong> Elegí <strong>Contenido de datos adjuntos (Attachments Content)</strong>.</li>
+                </ul>
+              </li>
+              <li>
+                ¡Listo! Tocá <strong>Guardar (Save)</strong> arriba a la derecha. A partir de ese momento, cada correo que entre a
+                <code>ABM.Convenios@swissmedical.com.ar</code> se cargará solo en el Excel.
+              </li>
+            </ol>
           </div>
         </div>
+      </div>
 
-        <!-- Cuerpo del mail -->
-        <div class="form-group">
-          <div class="label-row">
-            <label for="emailBodyInput">Cuerpo del Email (pegar desde Outlook con Ctrl+V)</label>
-            <button type="button" id="btnClearInputs" class="btn-link">Limpiar campos</button>
+      <!-- OPCIÓN B: POWER AUTOMATE HTTP -> NETLIFY -->
+      <div id="tabMethodHttp" class="method-content hidden">
+        <div class="card guide-card">
+          <div class="step-header">
+            <span class="step-badge">Opción B</span>
+            <h3>Conectar Power Automate directo a esta web (Requiere conector HTTP en Power Automate)</h3>
           </div>
-          <textarea
-            id="emailBodyInput"
-            rows="7"
-            placeholder="Copiá y pegá acá el texto o la tabla del cuerpo del mail (donde figura Convenio (1) y Valor de referencia (2))..."
-          ></textarea>
+          <p class="help-text">
+            Si tu cuenta de Power Automate tiene habilitado el conector <strong>HTTP</strong>, no necesitás crear ningún script en el Excel:
+          </p>
+          <ol class="friendly-steps">
+            <li>
+              En <strong>make.powerautomate.com</strong>, creá el flujo con el disparador
+              <strong>"Cuando llega un correo electrónico nuevo a un buzón compartido (V2)"</strong> apuntando a
+              <code>ABM.Convenios@swissmedical.com.ar</code> (con <em>Incluir datos adjuntos = Sí</em>).
+            </li>
+            <li>
+              Agregá un paso <strong>HTTP</strong> con método <strong>POST</strong> a esta dirección:
+              <div class="code-copy-box">
+                <code id="apiEndpointUrl">https://swissmedical.netlify.app/api/procesar</code>
+                <button type="button" id="btnCopyApiUrl" class="btn btn-outline">Copiar URL</button>
+              </div>
+              Y en el cuerpo (<em>Body</em>) enviá:
+              <pre class="code-preview">{
+  "emailBody": "@{triggerOutputs()?['body/body']}",
+  "receivedDate": "@{triggerOutputs()?['body/receivedDateTime']}",
+  "pdfBase64": "@{items('Apply_to_each')?['contentBytes']}"
+}</pre>
+            </li>
+            <li>
+              Agregá un paso de <strong>Excel Online (Business) &rarr; Agregar una fila a una tabla</strong> apuntando al Excel en SharePoint
+              con los campos devueltos en <code>rowObject</code>.
+            </li>
+          </ol>
         </div>
+      </div>
+    </section>
 
-        <div class="inline-fields">
-          <div class="form-group">
-            <label for="manualFechaMailInput">Fecha de recepción del mail (DD/MM/YYYY)</label>
-            <input
-              type="text"
-              id="manualFechaMailInput"
-              placeholder="Se detecta sola o ingresala"
-            />
-          </div>
-          <div class="form-group">
-            <label for="manualConvenioInput">Número de convenio (del mail)</label>
-            <input
-              type="text"
-              id="manualConvenioInput"
-              placeholder="Auto desde Convenio (1)"
-            />
-          </div>
-          <div class="form-group">
-            <label for="manualValorRefInput">Valor de referencia (del mail)</label>
-            <input
-              type="text"
-              id="manualValorRefInput"
-              placeholder="Auto desde Valor de referencia (2)"
-            />
-          </div>
+    <!-- ================================================================== -->
+    <!-- VISTA 2: CARGA ASISTIDA EN ESTA WEB (SIN CONFIGURAR NADA)          -->
+    <!-- ================================================================== -->
+    <div id="manualAssistView">
+      <!-- Barra de configuración rápida persistente -->
+      <section class="config-bar card">
+        <div class="config-item">
+          <label for="decimalSeparatorSelect">Separador decimal al pegar en Excel</label>
+          <select id="decimalSeparatorSelect">
+            <option value=",">Coma decimal (ej. 457650,00 - Excel Español)</option>
+            <option value=".">Punto decimal (ej. 457650.00)</option>
+          </select>
+        </div>
+        <div class="config-item">
+          <label for="defaultGerenciaInput">Gerencia Autorizante por defecto</label>
+          <input type="text" id="defaultGerenciaInput" value="Gerencia de Gestión de Prestadores Interior" />
+        </div>
+        <div class="config-item">
+          <label for="fechaCargaInput">Fecha de la carga</label>
+          <input type="text" id="fechaCargaInput" placeholder="DD/MM/YYYY" />
         </div>
       </section>
 
-      <!-- Columna Derecha: Vista previa editable de las 22 columnas antes de agregar -->
-      <section class="card">
-        <div class="step-header">
-          <span class="step-badge">Paso 2</span>
-          <h2>Verificación de Campos Extraídos (22 Columnas)</h2>
-        </div>
-        <p class="help-text">
-          Revisá los datos extraídos automáticamente del <strong>Cuerpo del Mail</strong> y del <strong>Formulario PDF</strong>.
-          Podés editar cualquier valor antes de sumarlo a la tabla.
-        </p>
+      <!-- Grilla de entrada: Paso 1 (Mail + PDF) y Paso 2 (Vista previa de los 22 campos) -->
+      <div class="workspace-grid">
+        <!-- Columna Izquierda: Entrada del Email y PDF -->
+        <section class="card">
+          <div class="step-header">
+            <span class="step-badge">Paso 1</span>
+            <h2>Datos del Email y Formulario PDF Adjunto</h2>
+          </div>
 
-        <div id="previewFieldsGrid" class="preview-grid">
-          <!-- Generado dinámicamente por app.js con las 22 columnas -->
+          <!-- Dropzone PDF -->
+          <div id="pdfDropzone" class="dropzone">
+            <input type="file" id="pdfFileInput" accept=".pdf,.eml" hidden />
+            <div class="dropzone-content">
+              <div class="dropzone-icon">PDF</div>
+              <div>
+                <p class="dropzone-title" id="pdfStatusTitle">
+                  Arrastrá acá el archivo <strong>.PDF</strong> adjunto ("Formulario de Excepciones")
+                </p>
+                <p class="dropzone-sub" id="pdfStatusSub">
+                  O hacé clic para seleccionarlo desde tu computadora
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cuerpo del mail -->
+          <div class="form-group">
+            <div class="label-row">
+              <label for="emailBodyInput">Cuerpo del Email (pegar desde Outlook con Ctrl+V)</label>
+              <button type="button" id="btnClearInputs" class="btn-link">Limpiar campos</button>
+            </div>
+            <textarea
+              id="emailBodyInput"
+              rows="7"
+              placeholder="Copiá y pegá acá el texto o la tabla del cuerpo del mail (donde figura Convenio (1) y Valor de referencia (2))..."
+            ></textarea>
+          </div>
+
+          <div class="inline-fields">
+            <div class="form-group">
+              <label for="manualFechaMailInput">Fecha de recepción del mail (DD/MM/YYYY)</label>
+              <input
+                type="text"
+                id="manualFechaMailInput"
+                placeholder="Se detecta sola o ingresala"
+              />
+            </div>
+            <div class="form-group">
+              <label for="manualConvenioInput">Número de convenio (del mail)</label>
+              <input
+                type="text"
+                id="manualConvenioInput"
+                placeholder="Auto desde Convenio (1)"
+              />
+            </div>
+            <div class="form-group">
+              <label for="manualValorRefInput">Valor de referencia (del mail)</label>
+              <input
+                type="text"
+                id="manualValorRefInput"
+                placeholder="Auto desde Valor de referencia (2)"
+              />
+            </div>
+          </div>
+        </section>
+
+        <!-- Columna Derecha: Vista previa editable de las 22 columnas antes de agregar -->
+        <section class="card">
+          <div class="step-header">
+            <span class="step-badge">Paso 2</span>
+            <h2>Verificación de Campos Extraídos (22 Columnas)</h2>
+          </div>
+          <p class="help-text">
+            Revisá los datos extraídos automáticamente del <strong>Cuerpo del Mail</strong> y del <strong>Formulario PDF</strong>.
+            Podés editar cualquier valor antes de sumarlo a la tabla.
+          </p>
+
+          <div id="previewFieldsGrid" class="preview-grid">
+            <!-- Generado dinámicamente por app.js con las 22 columnas -->
+          </div>
+
+          <div class="card-footer-actions">
+            <button type="button" id="btnAddRow" class="btn btn-primary btn-large">
+              + Agregar Fila a la Tabla de Carga
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- Paso 3: Tabla acumulada lista para copiar a SharePoint o descargar Excel -->
+      <section class="card batch-section">
+        <div class="batch-header">
+          <div>
+            <div class="step-header">
+              <span class="step-badge">Paso 3</span>
+              <h2>Filas Listas para Pasar al Excel de SharePoint (<span id="rowCountBadge">0</span>)</h2>
+            </div>
+            <p class="help-text">
+              Hacé clic en <strong>"Copiar filas para SharePoint"</strong>, andá al Excel abierto en SharePoint,
+              parate en la celda <strong>Fecha de recepción del mail</strong> de la nueva fila y presioná <strong>Ctrl + V</strong>
+              (el <em>Número de ingreso</em> lo numera solo el Excel).
+            </p>
+          </div>
+          <div class="batch-actions">
+            <button type="button" id="btnCopyForSharePoint" class="btn btn-success" disabled>
+              Copiar filas para SharePoint (Ctrl+V)
+            </button>
+            <button type="button" id="btnCopyWithHeaders" class="btn btn-outline" disabled>
+              Copiar con cabeceras
+            </button>
+            <button type="button" id="btnDownloadXlsx" class="btn btn-secondary" disabled>
+              Descargar Excel (.xlsx)
+            </button>
+            <button type="button" id="btnClearTable" class="btn btn-danger-outline" disabled>
+              Vaciar tabla
+            </button>
+          </div>
         </div>
 
-        <div class="card-footer-actions">
-          <button type="button" id="btnAddRow" class="btn btn-primary btn-large">
-            + Agregar Fila a la Tabla de Carga
-          </button>
+        <div class="table-wrapper">
+          <table id="batchTable">
+            <thead>
+              <tr id="batchTableHeader"></tr>
+            </thead>
+            <tbody id="batchTableBody">
+              <tr class="empty-row">
+                <td colspan="23">
+                  Todavía no hay filas en el lote. Subí un archivo PDF y pegá el cuerpo del mail en el Paso 1.
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </section>
     </div>
-
-    <!-- Paso 3: Tabla acumulada lista para copiar a SharePoint o descargar Excel -->
-    <section class="card batch-section">
-      <div class="batch-header">
-        <div>
-          <div class="step-header">
-            <span class="step-badge">Paso 3</span>
-            <h2>Filas Listas para Pasar al Excel de SharePoint (<span id="rowCountBadge">0</span>)</h2>
-          </div>
-          <p class="help-text">
-            Hacé clic en <strong>"Copiar filas para SharePoint"</strong>, andá al Excel abierto en SharePoint,
-            parate en la celda <strong>Fecha de recepción del mail</strong> de la nueva fila y presioná <strong>Ctrl + V</strong>
-            (el <em>Número de ingreso</em> lo numera solo el Excel).
-          </p>
-        </div>
-        <div class="batch-actions">
-          <button type="button" id="btnCopyForSharePoint" class="btn btn-success" disabled>
-            Copiar filas para SharePoint (Ctrl+V)
-          </button>
-          <button type="button" id="btnCopyWithHeaders" class="btn btn-outline" disabled>
-            Copiar con cabeceras
-          </button>
-          <button type="button" id="btnDownloadXlsx" class="btn btn-secondary" disabled>
-            Descargar Excel (.xlsx)
-          </button>
-          <button type="button" id="btnClearTable" class="btn btn-danger-outline" disabled>
-            Vaciar tabla
-          </button>
-        </div>
-      </div>
-
-      <div id="toastBanner" class="toast hidden"></div>
-
-      <div class="table-wrapper">
-        <table id="batchTable">
-          <thead>
-            <tr id="batchTableHeader"></tr>
-          </thead>
-          <tbody id="batchTableBody">
-            <tr class="empty-row">
-              <td colspan="23">
-                Todavía no hay filas en el lote. Subí un archivo PDF y pegá el cuerpo del mail en el Paso 1.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
   </main>
 
   <script src="parser.js"></script>
