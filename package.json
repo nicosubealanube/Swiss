@@ -1,0 +1,9 @@
+{
+  "name": "swiss-abm-convenios-automation",
+  "version": "1.0.0",
+  "description": "Automatización Web + API Serverless (Netlify) para carga de Excepciones ABM Convenios en SharePoint Excel",
+  "private": true,
+  "scripts": {
+    "start": "python3 -m http.server 8080 --directory public"
+  }
+}

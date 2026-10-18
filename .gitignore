@@ -1,0 +1,15 @@
+# Entorno y secretos
+.env
+.venv/
+venv/
+
+# Caché de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Sistema operativo
+.DS_Store
+
+# Archivos temporales de salida
+output/
