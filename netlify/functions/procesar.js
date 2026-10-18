@@ -50,7 +50,6 @@ exports.handler = async function (event) {
     }
 
     const record = SwissParser.buildExcelRecord(emailData, pdfData, {
-      numeroIngreso: payload.numeroIngreso || 50608,
       fechaCarga: payload.fechaCarga || "",
       gerenciaAutorizante: payload.gerenciaAutorizante || "",
       usuarioCarga: payload.usuarioCarga || "",

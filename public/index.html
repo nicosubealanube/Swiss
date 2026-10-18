@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ABM Convenios - Automatización de Excepciones | Swiss Medical</title>
   <link rel="stylesheet" href="styles.css" />
-  <!-- PDF.js (respaldo para PDFs comprimidos) y SheetJS (para exportar/actualizar archivos .xlsx) -->
+  <!-- PDF.js (respaldo para PDFs comprimidos) y SheetJS (para exportar archivos .xlsx) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -15,13 +15,10 @@
       <div class="swiss-badge">SM</div>
       <div>
         <h1>Automatización ABM de Convenios</h1>
-        <p class="subtitle">Casilla: <strong>ABM.Convenios@swissmedical.com.ar</strong> &rarr; Excel en SharePoint (23 columnas)</p>
+        <p class="subtitle">Casilla: <strong>ABM.Convenios@swissmedical.com.ar</strong> &rarr; Excel en SharePoint</p>
       </div>
     </div>
     <div class="topbar-actions">
-      <button type="button" id="btnLoadSample" class="btn btn-outline">
-        Cargar ejemplo real (Ledesma)
-      </button>
       <button type="button" id="btnToggleAutomate" class="btn btn-secondary">
         Guía Power Automate (100% Automático)
       </button>
@@ -46,7 +43,7 @@
           apuntando a <code>ABM.Convenios@swissmedical.com.ar</code> (con <em>Include Attachments = Yes</em>).
         </li>
         <li>
-          <strong>Acción HTTP POST a esta web en Netlify:</strong> Enviar a <code>https://TU-SITIO.netlify.app/api/procesar</code>
+          <strong>Acción HTTP POST a esta web en Netlify:</strong> Enviar a <code>https://swissmedical.netlify.app/api/procesar</code>
           el cuerpo del correo (<code>emailBody</code>), la fecha (<code>receivedDate</code>) y los bytes del adjunto PDF en Base64 (<code>pdfBase64</code>).
         </li>
         <li>
@@ -58,11 +55,6 @@
 
     <!-- Barra de configuración rápida persistente -->
     <section class="config-bar card">
-      <div class="config-item">
-        <label for="nextIngresoInput">Próximo N° de Ingreso</label>
-        <input type="number" id="nextIngresoInput" value="50608" min="1" />
-        <span class="hint">Se incrementa solo con cada fila</span>
-      </div>
       <div class="config-item">
         <label for="decimalSeparatorSelect">Separador decimal al pegar en Excel</label>
         <select id="decimalSeparatorSelect">
@@ -80,7 +72,7 @@
       </div>
     </section>
 
-    <!-- Grilla de entrada: Paso 1 (Mail + PDF) y Paso 2 (Vista previa de los 23 campos) -->
+    <!-- Grilla de entrada: Paso 1 (Mail + PDF) y Paso 2 (Vista previa de los 22 campos) -->
     <div class="workspace-grid">
       <!-- Columna Izquierda: Entrada del Email y PDF -->
       <section class="card">
@@ -124,7 +116,7 @@
             <input
               type="text"
               id="manualFechaMailInput"
-              placeholder="Se detecta sola o ingresala (ej. 16/10/2026)"
+              placeholder="Se detecta sola o ingresala"
             />
           </div>
           <div class="form-group">
@@ -146,11 +138,11 @@
         </div>
       </section>
 
-      <!-- Columna Derecha: Vista previa editable de las 23 columnas antes de agregar -->
+      <!-- Columna Derecha: Vista previa editable de las 22 columnas antes de agregar -->
       <section class="card">
         <div class="step-header">
           <span class="step-badge">Paso 2</span>
-          <h2>Verificación de Campos Extraídos (23 Columnas)</h2>
+          <h2>Verificación de Campos Extraídos (22 Columnas)</h2>
         </div>
         <p class="help-text">
           Revisá los datos extraídos automáticamente del <strong>Cuerpo del Mail</strong> y del <strong>Formulario PDF</strong>.
@@ -158,7 +150,7 @@
         </p>
 
         <div id="previewFieldsGrid" class="preview-grid">
-          <!-- Generado dinámicamente por app.js con las 23 columnas -->
+          <!-- Generado dinámicamente por app.js con las 22 columnas -->
         </div>
 
         <div class="card-footer-actions">
@@ -179,7 +171,8 @@
           </div>
           <p class="help-text">
             Hacé clic en <strong>"Copiar filas para SharePoint"</strong>, andá al Excel abierto en SharePoint,
-            parate en la primera celda libre de la columna <strong>Número de ingreso</strong> y presioná <strong>Ctrl + V</strong>.
+            parate en la celda <strong>Fecha de recepción del mail</strong> de la nueva fila y presioná <strong>Ctrl + V</strong>
+            (el <em>Número de ingreso</em> lo numera solo el Excel).
           </p>
         </div>
         <div class="batch-actions">
@@ -207,8 +200,8 @@
           </thead>
           <tbody id="batchTableBody">
             <tr class="empty-row">
-              <td colspan="24">
-                Todavía no hay filas en el lote. Cargá un PDF y el cuerpo del mail arriba (o probá con el botón "Cargar ejemplo real").
+              <td colspan="23">
+                Todavía no hay filas en el lote. Subí un archivo PDF y pegá el cuerpo del mail en el Paso 1.
               </td>
             </tr>
           </tbody>

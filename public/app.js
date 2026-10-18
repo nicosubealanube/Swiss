@@ -7,7 +7,6 @@
   const COLUMNS = window.SwissParser.EXCEL_COLUMNS;
 
   const COLUMN_SOURCE_META = {
-    "Número de ingreso": { tag: "Auto", cls: "source-auto" },
     "Fecha de recepción del mail": { tag: "Mail", cls: "source-mail" },
     "Vigencia desde": { tag: "PDF", cls: "source-pdf" },
     "Vigencia hasta": { tag: "PDF", cls: "source-pdf" },
@@ -32,38 +31,12 @@
     "Detalle": { tag: "Vacío", cls: "source-auto" },
   };
 
-  const SAMPLE_EMAIL_TEXT = `De: Maria Elena Velez <Maria.Velez@swissmedical.com.ar>
-Enviado: viernes, octubre 16, 2026 5:25:37 p.m.
-Para: ABM de Convenios <ABM.Convenios@swissmedical.com.ar>
-Cc: Elizabeth Martinez <Elizabeth.Martinez@swissmedical.com.ar>
-Asunto: Centro-Cba-E-01/10/26 al 31/10/26-P.1212 S Allende-Soc. 214421/01 LEDESMA, GERMAN ARIEL.
-
-Sres.
-ABM de Convenios
-Presente
-Se envía excepción para su carga Soc. 214421/01 LEDESMA, GERMAN ARIEL.
-
-Convenio (1)\t12421
-Valor de referencia (2)\t$ 457,650.00\tPrestador N°\t25966 Hospital Privado Rosario
-Trámite Excepción #302407236
-
-Observaciones (3)
-Cob. por Excepción Soc. 214421/01 LEDESMA, GERMAN ARIEL.
-Procedimiento: Cód. 1987 FILMARRAY PANEL MENINGITIS (BIOLOGÍA MOLECULAR) .
-Trámite #302390046 Gestion Presupuestos de Prestadores
-Trámite #302298742 Gestión Autorizaciones.
-
-Ma. Elena Velez
-Ejecutiva de Cuentas
-Gcia. Prestadores Interior`;
-
   // Estado de la aplicación
   let currentPdfData = {};
   let batchRows = [];
   const previewInputs = {};
 
   // Elementos del DOM
-  const nextIngresoInput = document.getElementById("nextIngresoInput");
   const decimalSeparatorSelect = document.getElementById("decimalSeparatorSelect");
   const defaultGerenciaInput = document.getElementById("defaultGerenciaInput");
   const fechaCargaInput = document.getElementById("fechaCargaInput");
@@ -80,7 +53,6 @@ Gcia. Prestadores Interior`;
 
   const previewFieldsGrid = document.getElementById("previewFieldsGrid");
   const btnAddRow = document.getElementById("btnAddRow");
-  const btnLoadSample = document.getElementById("btnLoadSample");
   const btnClearInputs = document.getElementById("btnClearInputs");
 
   const btnToggleAutomate = document.getElementById("btnToggleAutomate");
@@ -105,19 +77,11 @@ Gcia. Prestadores Interior`;
 
   function initConfig() {
     fechaCargaInput.value = getTodayDDMMYYYY();
-    const savedIngreso = localStorage.getItem("swiss_abm_next_ingreso");
-    if (savedIngreso && /^\d+$/.test(savedIngreso)) {
-      nextIngresoInput.value = savedIngreso;
-    }
     const savedSep = localStorage.getItem("swiss_abm_dec_sep");
     if (savedSep === "," || savedSep === ".") {
       decimalSeparatorSelect.value = savedSep;
     }
 
-    nextIngresoInput.addEventListener("change", () => {
-      localStorage.setItem("swiss_abm_next_ingreso", nextIngresoInput.value);
-      recomputePreview();
-    });
     decimalSeparatorSelect.addEventListener("change", () => {
       localStorage.setItem("swiss_abm_dec_sep", decimalSeparatorSelect.value);
     });
@@ -155,7 +119,7 @@ Gcia. Prestadores Interior`;
   function buildBatchTableHeader() {
     batchTableHeader.innerHTML = "";
     const thAction = document.createElement("th");
-    thAction.textContent = "";
+    thAction.textContent = "#";
     batchTableHeader.appendChild(thAction);
 
     COLUMNS.forEach((col) => {
@@ -227,7 +191,6 @@ Gcia. Prestadores Interior`;
     });
 
     const record = window.SwissParser.buildExcelRecord(effectiveEmailData, currentPdfData, {
-      numeroIngreso: parseInt(nextIngresoInput.value, 10) || 50608,
       fechaCarga: fechaCargaInput.value.trim() || getTodayDDMMYYYY(),
       gerenciaAutorizante: defaultGerenciaInput.value.trim(),
     });
@@ -257,7 +220,7 @@ Gcia. Prestadores Interior`;
       const td = document.createElement("td");
       td.colSpan = COLUMNS.length + 1;
       td.textContent =
-        'Todavía no hay filas en el lote. Cargá un PDF y el cuerpo del mail arriba (o probá con el botón "Cargar ejemplo real").';
+        "Todavía no hay filas en el lote. Subí un archivo PDF y pegá el cuerpo del mail en el Paso 1.";
       tr.appendChild(td);
       batchTableBody.appendChild(tr);
       return;
@@ -329,7 +292,7 @@ Gcia. Prestadores Interior`;
     const tsv = lines.join("\r\n");
     await navigator.clipboard.writeText(tsv);
     showToast(
-      `¡${batchRows.length} fila(s) copiada(s) al portapapeles! Andá al Excel de SharePoint, parate en la primera celda libre y presioná Ctrl + V.`
+      `¡${batchRows.length} fila(s) copiada(s)! Andá al Excel de SharePoint, parate en la celda 'Fecha de recepción del mail' de la fila nueva y presioná Ctrl + V.`
     );
   }
 
@@ -420,21 +383,6 @@ Gcia. Prestadores Interior`;
 
   btnClearInputs.addEventListener("click", clearInputs);
 
-  btnLoadSample.addEventListener("click", async () => {
-    clearInputs();
-    emailBodyInput.value = SAMPLE_EMAIL_TEXT;
-    try {
-      const resp = await fetch("sample_ledesma.pdf");
-      const buf = await resp.arrayBuffer();
-      await loadPdfBuffer(buf, "Excep. LEDESMA, GERMAN.pdf");
-      showToast(
-        'Ejemplo real cargado ("Excep. LEDESMA, GERMAN.pdf" + Cuerpo del mail). Hacé clic en "+ Agregar Fila a la Tabla de Carga".'
-      );
-    } catch (err) {
-      recomputePreview();
-    }
-  });
-
   btnAddRow.addEventListener("click", () => {
     const rowObj = {};
     COLUMNS.forEach((col) => {
@@ -443,13 +391,9 @@ Gcia. Prestadores Interior`;
     batchRows.push(rowObj);
     renderBatchTable();
 
-    // Incrementar automáticamente el próximo Número de ingreso
-    const currentNum = parseInt(nextIngresoInput.value, 10) || 50608;
-    const nextNum = currentNum + 1;
-    nextIngresoInput.value = String(nextNum);
-    localStorage.setItem("swiss_abm_next_ingreso", String(nextNum));
-
-    showToast(`Fila #${rowObj["Número de ingreso"]} agregada a la tabla de carga.`);
+    showToast(
+      `Fila agregada a la tabla de carga (Trámite #${rowObj["N_de_llamado"] || "-"}).`
+    );
     clearInputs();
   });
 

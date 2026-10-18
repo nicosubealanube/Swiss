@@ -1,6 +1,7 @@
 /**
  * Motor compartido de extracción (Navegador + Netlify Serverless Function)
- * Procesa el Cuerpo del Email + Formulario de Excepciones (.pdf) -> 23 Columnas de Excel en SharePoint
+ * Procesa el Cuerpo del Email + Formulario de Excepciones (.pdf) -> 22 Columnas de Excel en SharePoint
+ * (La columna 'Número de ingreso' se autonumera sola en el Excel de SharePoint).
  */
 (function (root, factory) {
   if (typeof module === "object" && module.exports) {
@@ -12,7 +13,6 @@
   "use strict";
 
   const EXCEL_COLUMNS = [
-    "Número de ingreso",
     "Fecha de recepción del mail",
     "Vigencia desde",
     "Vigencia hasta",
@@ -506,7 +506,6 @@
     const nLlamado = /^\d+$/.test(String(nLlamadoRaw)) ? parseInt(nLlamadoRaw, 10) : nLlamadoRaw;
 
     const recordObj = {
-      "Número de ingreso": opts.numeroIngreso || 50608,
       "Fecha de recepción del mail": fechaRecepcion,
       "Vigencia desde": pdfData.vigencia_desde || "",
       "Vigencia hasta": pdfData.vigencia_hasta || "",
