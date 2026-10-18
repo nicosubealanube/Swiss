@@ -1,0 +1,2181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ABM de Convenios - Carga Automática de Excepciones | Swiss Medical</title>
+  <style>
+:root {
+  --sm-red: #d9232a;
+  --sm-red-dark: #b3191f;
+  --sm-blue: #1f4e78;
+  --bg: #f4f6f9;
+  --card-bg: #ffffff;
+  --border: #dde2ea;
+  --text: #1e293b;
+  --text-muted: #64748b;
+  --success: #0d9488;
+  --success-hover: #0f766e;
+  --radius: 10px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+  padding-bottom: 48px;
+}
+
+.topbar {
+  background: var(--card-bg);
+  border-bottom: 3px solid var(--sm-red);
+  padding: 14px 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.swiss-logo {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.topbar h1 {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-mode {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  padding: 9px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+.btn-mode.active {
+  background: var(--sm-blue);
+  color: #fff;
+  border-color: var(--sm-blue);
+}
+
+.container {
+  max-width: 1440px;
+  margin: 20px auto;
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+#manualAssistView {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.guide-hero {
+  border-left: 5px solid var(--sm-red);
+  margin-bottom: 18px;
+}
+
+.guide-hero h2 {
+  font-size: 19px;
+  margin-bottom: 8px;
+}
+
+.guide-hero p {
+  font-size: 14px;
+  color: #334155;
+  margin-bottom: 14px;
+}
+
+.method-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.method-tab {
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.method-tab.active {
+  background: var(--sm-blue);
+  color: #fff;
+  border-color: var(--sm-blue);
+}
+
+.guide-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  .guide-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.friendly-steps {
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.friendly-steps ul {
+  margin-top: 6px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.code-copy-box {
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.code-preview {
+  margin-top: 10px;
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  max-height: 280px;
+  overflow: auto;
+  white-space: pre;
+}
+
+.config-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.config-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.config-item label,
+.form-group label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+}
+
+input[type="text"],
+input[type="number"],
+select,
+textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--text);
+  background: #fff;
+  transition: border-color 0.15s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--sm-blue);
+  box-shadow: 0 0 0 2px rgba(31, 78, 120, 0.12);
+}
+
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.25fr;
+  gap: 18px;
+}
+
+@media (max-width: 1024px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.step-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.step-header h2,
+.step-header h3 {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.step-badge {
+  background: var(--sm-blue);
+  color: #fff;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.dropzone {
+  border: 2px dashed #94a3b8;
+  border-radius: 8px;
+  padding: 18px;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  margin-bottom: 14px;
+}
+
+.dropzone:hover,
+.dropzone.dragover {
+  border-color: var(--sm-red);
+  background: #fff5f5;
+}
+
+.dropzone.loaded {
+  border-color: var(--success);
+  background: #f0fdfa;
+}
+
+.dropzone-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.dropzone-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: #e2e8f0;
+  color: #334155;
+  font-weight: 800;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.dropzone.loaded .dropzone-icon {
+  background: var(--success);
+  color: #fff;
+}
+
+.dropzone-title {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.dropzone-sub {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+}
+
+.label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.inline-fields {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+@media (max-width: 640px) {
+  .inline-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+.help-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+  gap: 9px 12px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.preview-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.preview-field.wide {
+  grid-column: span 2;
+}
+
+.preview-field label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #475569;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.source-tag {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.source-mail {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.source-pdf {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.source-auto {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.card-footer-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn {
+  border: none;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: var(--sm-red);
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--sm-red-dark);
+}
+
+.btn-large {
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+.btn-success {
+  background: var(--success);
+  color: #fff;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: var(--success-hover);
+}
+
+.btn-secondary {
+  background: var(--sm-blue);
+  color: #fff;
+}
+
+.btn-outline {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid #cbd5e1;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #f1f5f9;
+}
+
+.btn-danger-outline {
+  background: #fff;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--sm-blue);
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.batch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.toast {
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  color: #065f46;
+  padding: 10px 14px;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+thead th {
+  background: var(--sm-blue);
+  color: #fff;
+  padding: 9px 10px;
+  text-align: left;
+  font-weight: 600;
+}
+
+tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr:hover {
+  background: #f8fafc;
+}
+
+.empty-row td {
+  text-align: center;
+  padding: 26px;
+  color: var(--text-muted);
+}
+
+.btn-delete-row {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+
+.local-security-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 999px;
+}
+
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <img src="data:image/png;base64,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" alt="Swiss Medical" class="swiss-logo" />
+      <div>
+        <h1>Automatización ABM de Convenios</h1>
+        <p class="subtitle">Casilla: <strong>ABM.Convenios@swissmedical.com.ar</strong> &rarr; Excel en SharePoint</p>
+      </div>
+    </div>
+    <div class="topbar-actions">
+      <span class="local-security-pill" title="Todos los archivos PDF y correos se procesan localmente en este equipo sin enviarse a ningún servidor externo.">
+        &#128274; Ejecución 100% Local y Privada
+      </span>
+      <button type="button" id="btnModeManual" class="btn btn-mode active">
+        Carga Asistida
+      </button>
+      <button type="button" id="btnModeAuto" class="btn btn-mode">
+        Automatización Microsoft 365 (Excel + Power Automate)
+      </button>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="toastBanner" class="toast hidden"></div>
+
+    <!-- ================================================================== -->
+    <!-- VISTA 1: GUÍA PASO A PASO 100% INTERNA EN MICROSOFT 365            -->
+    <!-- ================================================================== -->
+    <section id="autoSetupView" class="hidden">
+      <div class="card guide-hero">
+        <h2>Automatización 100% Interna en Microsoft 365 (Outlook &rarr; SharePoint Excel)</h2>
+        <p>
+          Con esta configuración, cada vez que ingresa un correo con un formulario PDF a
+          <strong>ABM.Convenios@swissmedical.com.ar</strong>, los datos se cargan
+          <strong>automáticamente en el Excel de SharePoint</strong> dentro del entorno corporativo de Microsoft 365,
+          sin pasar por servidores externos.
+        </p>
+      </div>
+
+      <div id="tabMethodExcel" class="method-content">
+        <div class="guide-grid">
+          <!-- Parte 1: En el Excel de SharePoint -->
+          <div class="card guide-card">
+            <div class="step-header">
+              <span class="step-badge">Paso 1 (En Excel)</span>
+              <h3>Cargar el Script Extractor en el Excel de SharePoint</h3>
+            </div>
+            <p class="help-text">
+              Este script interno de Excel lee el correo y el formulario PDF adjunto y escribe la nueva fila en la planilla:
+            </p>
+            <ol class="friendly-steps">
+              <li>
+                Abrí en tu navegador el archivo <strong>Excel en SharePoint</strong> donde se registran las excepciones.
+              </li>
+              <li>
+                En el menú superior del Excel, hacé clic en la pestaña
+                <strong>Automatizar</strong> (<em>Automate</em>) y seleccioná <strong>Nuevo script</strong> (<em>New Script</em>).
+              </li>
+              <li>
+                En el panel de código que se abre a la derecha, <strong>borrá el contenido inicial</strong>.
+              </li>
+              <li>
+                Hacé clic en el botón verde para copiar el script y pegalo en el panel con <strong>Ctrl + V</strong>:
+                <div class="code-copy-box">
+                  <button type="button" id="btnCopyExcelScript" class="btn btn-success">
+                    Copiar Código para Excel
+                  </button>
+                  <button type="button" id="btnToggleScriptPreview" class="btn btn-outline">
+                    Ver / Ocultar código
+                  </button>
+                </div>
+                <pre id="excelScriptPre" class="code-preview hidden"></pre>
+              </li>
+              <li>
+                Nombrá el script como <strong><code>CargarExcepcionABM</code></strong> y hacé clic en
+                <strong>Guardar script</strong> (<em>Save script</em>).
+              </li>
+            </ol>
+          </div>
+
+          <!-- Parte 2: En Power Automate -->
+          <div class="card guide-card">
+            <div class="step-header">
+              <span class="step-badge">Paso 2 (En Power Automate)</span>
+              <h3>Vincular la casilla ABM.Convenios con el Excel</h3>
+            </div>
+            <p class="help-text">
+              Regla automática dentro de Microsoft 365 para que cada email entrante dispare el script del Excel:
+            </p>
+            <ol class="friendly-steps">
+              <li>
+                Ingresá a
+                <a href="https://make.powerautomate.com" target="_blank" rel="noopener"><strong>make.powerautomate.com</strong></a>
+                con tu cuenta corporativa de Swiss Medical.
+              </li>
+              <li>
+                En el menú izquierdo seleccioná <strong>Crear</strong> &rarr;
+                <strong>Flujo de nube automatizado</strong>.
+              </li>
+              <li>
+                Asignale el nombre <code>ABM Convenios a Excel</code>, buscá el disparador
+                <strong>"Cuando llega un correo electrónico nuevo a un buzón compartido (V2)"</strong> (Office 365 Outlook) y presioná <em>Crear</em>.
+              </li>
+              <li>
+                Configurá el bloque del correo con:
+                <ul>
+                  <li><strong>Dirección del buzón original:</strong> <code>ABM.Convenios@swissmedical.com.ar</code></li>
+                  <li><strong>Carpeta:</strong> <code>Inbox</code></li>
+                  <li><strong>Incluir datos adjuntos:</strong> <strong>Sí</strong></li>
+                  <li><strong>Solo con datos adjuntos:</strong> <strong>Sí</strong></li>
+                </ul>
+              </li>
+              <li>
+                Agregá un <strong>(+) Nuevo paso</strong>, elegí <strong>Excel Online (Empresas)</strong> y seleccioná la acción
+                <strong>"Ejecutar script" (Run script)</strong>.
+              </li>
+              <li>
+                Seleccioná el archivo Excel de Excepciones en SharePoint y elegí el script <strong><code>CargarExcepcionABM</code></strong>.
+              </li>
+              <li>
+                Completá los 3 parámetros con el contenido dinámico del correo:
+                <ul>
+                  <li><strong><code>emailBody</code>:</strong> <strong>Cuerpo (Body)</strong> del correo.</li>
+                  <li><strong><code>receivedDate</code>:</strong> <strong>Hora de recepción (Received Time)</strong>.</li>
+                  <li><strong><code>pdfBase64</code>:</strong> <strong>Contenido de datos adjuntos (Attachments Content)</strong>.</li>
+                </ul>
+              </li>
+              <li>
+                Hacé clic en <strong>Guardar</strong>. A partir de ese momento, cada correo nuevo se procesará automáticamente.
+              </li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================================================================== -->
+    <!-- VISTA 2: CARGA ASISTIDA LOCAL                                      -->
+    <!-- ================================================================== -->
+    <div id="manualAssistView">
+      <section class="config-bar card">
+        <div class="config-item">
+          <label for="decimalSeparatorSelect">Separador decimal al pegar en Excel</label>
+          <select id="decimalSeparatorSelect">
+            <option value=",">Coma decimal (ej. 457650,00 - Excel Español)</option>
+            <option value=".">Punto decimal (ej. 457650.00)</option>
+          </select>
+        </div>
+        <div class="config-item">
+          <label for="defaultGerenciaInput">Gerencia Autorizante por defecto</label>
+          <input type="text" id="defaultGerenciaInput" value="Gerencia de Gestión de Prestadores Interior" />
+        </div>
+        <div class="config-item">
+          <label for="fechaCargaInput">Fecha de la carga</label>
+          <input type="text" id="fechaCargaInput" placeholder="DD/MM/YYYY" />
+        </div>
+      </section>
+
+      <div class="workspace-grid">
+        <section class="card">
+          <div class="step-header">
+            <span class="step-badge">Paso 1</span>
+            <h2>Datos del Email y Formulario PDF Adjunto</h2>
+          </div>
+
+          <div id="pdfDropzone" class="dropzone">
+            <input type="file" id="pdfFileInput" accept=".pdf,.eml" hidden />
+            <div class="dropzone-content">
+              <div class="dropzone-icon">PDF</div>
+              <div>
+                <p class="dropzone-title" id="pdfStatusTitle">
+                  Arrastrá acá el archivo <strong>.PDF</strong> adjunto ("Formulario de Excepciones")
+                </p>
+                <p class="dropzone-sub" id="pdfStatusSub">
+                  O hacé clic para seleccionarlo desde tu computadora
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="label-row">
+              <label for="emailBodyInput">Cuerpo del Email (pegar desde Outlook con Ctrl+V)</label>
+              <button type="button" id="btnClearInputs" class="btn-link">Limpiar campos</button>
+            </div>
+            <textarea
+              id="emailBodyInput"
+              rows="7"
+              placeholder="Copiá y pegá acá el texto o la tabla del cuerpo del mail (donde figura Convenio (1) y Valor de referencia (2))..."
+            ></textarea>
+          </div>
+
+          <div class="inline-fields">
+            <div class="form-group">
+              <label for="manualFechaMailInput">Fecha de recepción del mail (DD/MM/YYYY)</label>
+              <input
+                type="text"
+                id="manualFechaMailInput"
+                placeholder="Se detecta sola o ingresala"
+              />
+            </div>
+            <div class="form-group">
+              <label for="manualConvenioInput">Número de convenio (del mail)</label>
+              <input
+                type="text"
+                id="manualConvenioInput"
+                placeholder="Auto desde Convenio (1)"
+              />
+            </div>
+            <div class="form-group">
+              <label for="manualValorRefInput">Valor de referencia (del mail)</label>
+              <input
+                type="text"
+                id="manualValorRefInput"
+                placeholder="Auto desde Valor de referencia (2)"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="step-header">
+            <span class="step-badge">Paso 2</span>
+            <h2>Verificación de Campos Extraídos (22 Columnas)</h2>
+          </div>
+          <p class="help-text">
+            Revisá los datos extraídos automáticamente del <strong>Cuerpo del Mail</strong> y del <strong>Formulario PDF</strong>.
+            Podés editar cualquier valor antes de sumarlo a la tabla.
+          </p>
+
+          <div id="previewFieldsGrid" class="preview-grid"></div>
+
+          <div class="card-footer-actions">
+            <button type="button" id="btnAddRow" class="btn btn-primary btn-large">
+              + Agregar Fila a la Tabla de Carga
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <section class="card batch-section">
+        <div class="batch-header">
+          <div>
+            <div class="step-header">
+              <span class="step-badge">Paso 3</span>
+              <h2>Filas Listas para Pasar al Excel de SharePoint (<span id="rowCountBadge">0</span>)</h2>
+            </div>
+            <p class="help-text">
+              Hacé clic en <strong>"Copiar filas para SharePoint"</strong>, andá al Excel abierto en SharePoint,
+              parate en la celda <strong>Fecha de recepción del mail</strong> de la nueva fila y presioná <strong>Ctrl + V</strong>
+              (el <em>Número de ingreso</em> lo numera solo el Excel).
+            </p>
+          </div>
+          <div class="batch-actions">
+            <button type="button" id="btnCopyForSharePoint" class="btn btn-success" disabled>
+              Copiar filas para SharePoint (Ctrl+V)
+            </button>
+            <button type="button" id="btnCopyWithHeaders" class="btn btn-outline" disabled>
+              Copiar con cabeceras
+            </button>
+            <button type="button" id="btnDownloadXlsx" class="btn btn-secondary" disabled>
+              Descargar Excel (.xlsx)
+            </button>
+            <button type="button" id="btnClearTable" class="btn btn-danger-outline" disabled>
+              Vaciar tabla
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table id="batchTable">
+            <thead>
+              <tr id="batchTableHeader"></tr>
+            </thead>
+            <tbody id="batchTableBody">
+              <tr class="empty-row">
+                <td colspan="23">
+                  Todavía no hay filas en el lote. Subí un archivo PDF y pegá el cuerpo del mail en el Paso 1.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script>
+/**
+ * Motor compartido de extracción (Navegador + Netlify Serverless Function)
+ * Procesa el Cuerpo del Email + Formulario de Excepciones (.pdf) -> 22 Columnas de Excel en SharePoint
+ * (La columna 'Número de ingreso' se autonumera sola en el Excel de SharePoint).
+ */
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) {
+    module.exports = factory();
+  } else {
+    root.SwissParser = factory();
+  }
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const EXCEL_COLUMNS = [
+    "Fecha de recepción del mail",
+    "Vigencia desde",
+    "Vigencia hasta",
+    "Numero_de_Socio",
+    "Numero del socio_integrante",
+    "Código del prestador",
+    "Nombre del prestador",
+    "Número de convenio",
+    "Código de la Prestación",
+    "Nombre de la Prestación",
+    "Valor de referencia",
+    "Valor presupuestado",
+    "Valor de la excepción",
+    "Valor a liquidar",
+    "Gerencia autorizante",
+    "Usuario de carga",
+    "Fecha de la carga",
+    "N_de_llamado",
+    "Tipo_de_excepcion",
+    "Motivo de la Excepción",
+    "Autorizaciones si/no?",
+    "Detalle",
+  ];
+
+  const MESES_ES = {
+    enero: 1,
+    febrero: 2,
+    marzo: 3,
+    abril: 4,
+    mayo: 5,
+    junio: 6,
+    julio: 7,
+    agosto: 8,
+    septiembre: 9,
+    setiembre: 9,
+    octubre: 10,
+    noviembre: 11,
+    diciembre: 12,
+  };
+
+  const SOLICITANTES_MAP = {
+    "maria elena velez": {
+      gerencia: "Gerencia de Gestión de Prestadores Interior",
+      usuario: "MV",
+    },
+    "maria.velez@swissmedical.com.ar": {
+      gerencia: "Gerencia de Gestión de Prestadores Interior",
+      usuario: "MV",
+    },
+  };
+
+  function unescapePdfString(text) {
+    return text
+      .replace(/\\\(/g, "(")
+      .replace(/\\\)/g, ")")
+      .replace(/\\\\/g, "\\")
+      .replace(/&aacute;/gi, "á")
+      .replace(/&eacute;/gi, "é")
+      .replace(/&iacute;/gi, "í")
+      .replace(/&oacute;/gi, "ó")
+      .replace(/&uacute;/gi, "ú")
+      .replace(/&ntilde;/gi, "ñ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function uint8ArrayToLatin1(bytes) {
+    let str = "";
+    const chunkSize = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const sub = bytes.subarray(i, i + chunkSize);
+      str += String.fromCharCode.apply(null, sub);
+    }
+    return str;
+  }
+
+  function extractBlocksFromPdfBytes(pdfBytes, fallbackBlocks) {
+    const rawLatin1 = uint8ArrayToLatin1(pdfBytes);
+    const blocks = [];
+    const streamRegex = /stream\r?\n([\s\S]*?)\r?\nendstream/g;
+    let streamMatch;
+
+    while ((streamMatch = streamRegex.exec(rawLatin1)) !== null) {
+      const streamContent = streamMatch[1];
+      if (streamContent.indexOf("BT") !== -1 && streamContent.indexOf("Tj") !== -1) {
+        const btRegex = /BT\s+([\s\S]*?)\s+ET/g;
+        let btMatch;
+        while ((btMatch = btRegex.exec(streamContent)) !== null) {
+          const btBlock = btMatch[1];
+          const tjRegex = /\((.*?)\)\s*Tj/g;
+          let tjMatch;
+          const parts = [];
+          while ((tjMatch = tjRegex.exec(btBlock)) !== null) {
+            const cleaned = unescapePdfString(tjMatch[1]);
+            if (cleaned) parts.push(cleaned);
+          }
+          if (parts.length > 0) {
+            blocks.push(parts.join(" "));
+          }
+        }
+      }
+    }
+
+    if (blocks.length > 0) {
+      return blocks;
+    }
+    return Array.isArray(fallbackBlocks) ? fallbackBlocks : [];
+  }
+
+  function parseMoneyAmount(raw) {
+    if (raw === null || raw === undefined) return "";
+    const str = String(raw).trim();
+    if (!str) return "";
+    let cleaned = str.replace(/[^\d.,-]/g, "").trim();
+    if (!cleaned || cleaned === "-") return "";
+
+    if (cleaned.includes(",") && cleaned.includes(".")) {
+      if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+      } else {
+        cleaned = cleaned.replace(/,/g, "");
+      }
+    } else if (cleaned.includes(",")) {
+      const parts = cleaned.split(",");
+      if (parts[parts.length - 1].length === 2) {
+        cleaned = parts.slice(0, -1).join("") + "." + parts[parts.length - 1];
+      } else {
+        cleaned = cleaned.replace(/,/g, "");
+      }
+    }
+
+    const num = Number(cleaned);
+    return Number.isFinite(num) ? num : "";
+  }
+
+  function parseSocioIntegrante(raw) {
+    const m = String(raw || "").match(/0*(\d+)\s*\/\s*0*(\d+)/);
+    if (!m) return { socio: "", integrante: "" };
+    return {
+      socio: parseInt(m[1], 10),
+      integrante: parseInt(m[2], 10),
+    };
+  }
+
+  function parsePrestacion(raw) {
+    const str = String(raw || "").trim();
+    const m = str.match(/^\s*(\d+)\s*-\s*(.+)$/);
+    if (m) {
+      return {
+        codigo: parseInt(m[1], 10),
+        nombre: m[2].trim(),
+      };
+    }
+    return { codigo: "", nombre: str };
+  }
+
+  function parseFormularioPdfBlocks(blocks) {
+    const result = {
+      nro_tramite: "",
+      fecha_formulario: "",
+      solicitante: "",
+      tipo_excepcion: "",
+      motivo_excepcion: "",
+      razon: "",
+      codigo_prestador: "",
+      nombre_prestador: "",
+      numero_socio: "",
+      numero_integrante: "",
+      afiliado_nombre: "",
+      codigo_prestacion: "",
+      nombre_prestacion: "",
+      importe_excepcion: "",
+      importe_presupuestado: "",
+      importe_a_liquidar: "",
+      cantidad: "",
+      vigencia_desde: "",
+      vigencia_hasta: "",
+    };
+
+    const fullText = blocks.join("\n");
+    if (/Excepci[oó]n\s+al\s+Pres?t?ador/i.test(fullText)) {
+      result.tipo_excepcion = "Al Prestador";
+    } else if (/Excepci[oó]n\s+al\s+(Cliente|Afiliado|Socio)/i.test(fullText)) {
+      result.tipo_excepcion = "Al Cliente";
+    }
+
+    let currentSection = "";
+    let i = 0;
+    while (i < blocks.length) {
+      const token = (blocks[i] || "").trim();
+      const nextVal = i + 1 < blocks.length ? (blocks[i + 1] || "").trim() : "";
+
+      if (
+        token === "Datos del Prestador" ||
+        token === "Datos del Afiliado" ||
+        token === "Detalle de la excepción a otorgar" ||
+        token.startsWith("Excepción al")
+      ) {
+        currentSection = token;
+        i += 1;
+        continue;
+      }
+
+      if (token === "Nro Trámite:") {
+        result.nro_tramite = nextVal;
+        i += 2;
+        continue;
+      }
+      if (token === "Fecha:" && !result.fecha_formulario) {
+        result.fecha_formulario = nextVal;
+        i += 2;
+        continue;
+      }
+      if (token === "Solicitante:") {
+        result.solicitante = nextVal;
+        i += 2;
+        continue;
+      }
+      if (token === "Descripción:") {
+        result.motivo_excepcion = nextVal;
+        i += 2;
+        continue;
+      }
+      if (token === "Razón:") {
+        result.razon = nextVal;
+        i += 2;
+        continue;
+      }
+      if (token === "Código:" && currentSection.includes("Prestador")) {
+        if (/^\d+$/.test(nextVal)) {
+          result.codigo_prestador = parseInt(nextVal, 10);
+        }
+        i += 2;
+        continue;
+      }
+      if (token === "Apellido y Nombre / Razón Social:") {
+        result.nombre_prestador = nextVal;
+        i += 2;
+        continue;
+      }
+      if (token === "Contra/Inte:") {
+        const parsed = parseSocioIntegrante(nextVal);
+        result.numero_socio = parsed.socio;
+        result.numero_integrante = parsed.integrante;
+        i += 2;
+        continue;
+      }
+      if (token === "Apellido y Nombre:" && currentSection.includes("Afiliado")) {
+        result.afiliado_nombre = nextVal;
+        i += 2;
+        continue;
+      }
+      if (token === "Prestación:") {
+        const prest = parsePrestacion(nextVal);
+        result.codigo_prestacion = prest.codigo;
+        result.nombre_prestacion = prest.nombre;
+        i += 2;
+        continue;
+      }
+      if (token === "Importe de la excepción:") {
+        result.importe_excepcion = parseMoneyAmount(nextVal);
+        i += 2;
+        continue;
+      }
+      if (token === "Importe presupuestado:") {
+        result.importe_presupuestado = parseMoneyAmount(nextVal);
+        i += 2;
+        continue;
+      }
+      if (token === "Importe a liquidar:") {
+        result.importe_a_liquidar = parseMoneyAmount(nextVal);
+        i += 2;
+        continue;
+      }
+      if (token === "Cantidad:") {
+        if (/^\d+$/.test(nextVal)) {
+          result.cantidad = parseInt(nextVal, 10);
+        }
+        i += 2;
+        continue;
+      }
+      if (token === "Fecha desde:") {
+        result.vigencia_desde = nextVal;
+        i += 2;
+        continue;
+      }
+      if (token === "Fecha hasta:") {
+        result.vigencia_hasta = nextVal;
+        i += 2;
+        continue;
+      }
+      i += 1;
+    }
+
+    return result;
+  }
+
+  function parseFormularioPdfBytes(pdfBytes, fallbackBlocks) {
+    const blocks = extractBlocksFromPdfBytes(pdfBytes, fallbackBlocks);
+    return parseFormularioPdfBlocks(blocks);
+  }
+
+  function normalizeDateDDMMYYYY(rawDate) {
+    if (!rawDate) return "";
+    const str = String(rawDate).trim();
+
+    const mDirect = str.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/);
+    if (mDirect) {
+      const d = String(parseInt(mDirect[1], 10)).padStart(2, "0");
+      const m = String(parseInt(mDirect[2], 10)).padStart(2, "0");
+      return `${d}/${m}/${mDirect[3]}`;
+    }
+
+    const lower = str.toLowerCase();
+    const mEs1 = lower.match(/([a-záéíóú]+)\s+(\d{1,2}),?\s+(\d{4})/);
+    if (mEs1 && MESES_ES[mEs1[1]]) {
+      const d = String(parseInt(mEs1[2], 10)).padStart(2, "0");
+      const m = String(MESES_ES[mEs1[1]]).padStart(2, "0");
+      return `${d}/${m}/${mEs1[3]}`;
+    }
+
+    const mEs2 = lower.match(/(\d{1,2})\s+de\s+([a-záéíóú]+)\s+de\s+(\d{4})/);
+    if (mEs2 && MESES_ES[mEs2[2]]) {
+      const d = String(parseInt(mEs2[1], 10)).padStart(2, "0");
+      const m = String(MESES_ES[mEs2[2]]).padStart(2, "0");
+      return `${d}/${m}/${mEs2[3]}`;
+    }
+
+    const parsedDate = new Date(str);
+    if (!isNaN(parsedDate.getTime())) {
+      const d = String(parsedDate.getDate()).padStart(2, "0");
+      const m = String(parsedDate.getMonth() + 1).padStart(2, "0");
+      const y = parsedDate.getFullYear();
+      return `${d}/${m}/${y}`;
+    }
+
+    return "";
+  }
+
+  function htmlOrTextToTokens(content) {
+    if (!content) return [];
+    let text = String(content);
+    if (text.includes("<") && text.includes(">")) {
+      text = text
+        .replace(/<\/(td|th|tr|p|div|li)>/gi, "\n")
+        .replace(/<br\s*\/?>/gi, "\n")
+        .replace(/<[^>]+>/g, " ");
+    }
+    return text
+      .split(/\r?\n|\t/)
+      .map((line) => line.replace(/\s+/g, " ").trim())
+      .filter(Boolean);
+  }
+
+  function parseEmailBody(bodyContent, options) {
+    const opts = options || {};
+    const tokens = htmlOrTextToTokens(bodyContent);
+    const fullText = tokens.join("\n");
+
+    const result = {
+      subject: opts.subject || "",
+      sender_name: opts.senderName || "",
+      sender_email: opts.senderEmail || "",
+      fecha_recepcion: normalizeDateDDMMYYYY(opts.receivedDate || ""),
+      numero_convenio: "",
+      valor_referencia: "",
+      tramite_excepcion_body: "",
+      gerencia_firma: "",
+    };
+
+    if (!result.fecha_recepcion) {
+      const mEnviado = fullText.match(/Enviado:\s*([^\n\r]+)/i);
+      if (mEnviado) {
+        result.fecha_recepcion = normalizeDateDDMMYYYY(mEnviado[1]);
+      }
+    }
+
+    // 1. Convenio (1)
+    for (let idx = 0; idx < tokens.length; idx++) {
+      const tok = tokens[idx];
+      if (/Convenio\s*(?:\(\s*1\s*\))?/i.test(tok)) {
+        const afterLabel = tok.replace(/.*Convenio\s*(?:\(\s*1\s*\))?\s*[:\-]?/i, "").trim();
+        const mSame = afterLabel.match(/^(\d+)/);
+        if (mSame) {
+          result.numero_convenio = parseInt(mSame[1], 10);
+          break;
+        }
+        if (idx + 1 < tokens.length && !/Valor\s+de\s+referencia/i.test(tokens[idx + 1])) {
+          const mNext = tokens[idx + 1].trim().match(/^(\d+)\b/);
+          if (mNext) {
+            result.numero_convenio = parseInt(mNext[1], 10);
+            break;
+          }
+        }
+      }
+    }
+
+    // 2. Valor de referencia (2)
+    for (let idx = 0; idx < tokens.length; idx++) {
+      const tok = tokens[idx];
+      if (/Valor\s+de\s+referencia\s*\(\s*2\s*\)/i.test(tok)) {
+        const remainder = tok.replace(/.*Valor\s+de\s+referencia\s*\(\s*2\s*\)/i, "").trim();
+        const candidates = [remainder, tokens[idx + 1] || "", tokens[idx + 2] || ""];
+        for (const cand of candidates) {
+          if (!cand) continue;
+          const candCut = cand.split(/Prestador\s*N/i)[0];
+          const amount = parseMoneyAmount(candCut);
+          if (amount !== "") {
+            result.valor_referencia = amount;
+            break;
+          }
+        }
+        if (result.valor_referencia !== "") break;
+      }
+    }
+
+    // 3. Trámite Excepción #
+    const mTramite = fullText.match(/Tr[aá]mite\s+Excepci[oó]n\s*#\s*(\d+)/i);
+    if (mTramite) {
+      result.tramite_excepcion_body = mTramite[1];
+    }
+
+    // 4. Gerencia en firma
+    if (/Prestadores\s+Interior/i.test(fullText)) {
+      result.gerencia_firma = "Gerencia de Gestión de Prestadores Interior";
+    } else if (/Auditor[ií]a\s+M[eé]dica/i.test(fullText)) {
+      result.gerencia_firma = "Auditoria Médica";
+    }
+
+    return result;
+  }
+
+  function resolveGerenciaAndUsuario(emailData, pdfData, defaults) {
+    const defs = defaults || {};
+    const solicitanteKey = String(pdfData.solicitante || emailData.sender_name || "")
+      .trim()
+      .toLowerCase();
+    const emailKey = String(emailData.sender_email || "")
+      .trim()
+      .toLowerCase();
+
+    if (SOLICITANTES_MAP[solicitanteKey]) {
+      return SOLICITANTES_MAP[solicitanteKey];
+    }
+    if (SOLICITANTES_MAP[emailKey]) {
+      return SOLICITANTES_MAP[emailKey];
+    }
+
+    const gerencia =
+      defs.gerenciaAutorizante ||
+      emailData.gerencia_firma ||
+      "Gerencia de Gestión de Prestadores Interior";
+
+    let usuario = defs.usuarioCarga || "";
+    if (!usuario && solicitanteKey) {
+      const parts = solicitanteKey.split(/\s+/).filter((w) => /^[a-záéíóúñ]+$/i.test(w));
+      if (parts.length >= 2) {
+        usuario = (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      } else if (parts.length === 1) {
+        usuario = parts[0].slice(0, 2).toUpperCase();
+      }
+    }
+
+    return { gerencia, usuario };
+  }
+
+  function formatTodayDDMMYYYY() {
+    const now = new Date();
+    const d = String(now.getDate()).padStart(2, "0");
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const y = now.getFullYear();
+    return `${d}/${m}/${y}`;
+  }
+
+  function buildExcelRecord(emailData, pdfData, options) {
+    const opts = options || {};
+    const { gerencia, usuario } = resolveGerenciaAndUsuario(emailData, pdfData, opts);
+    const fechaCarga = opts.fechaCarga || formatTodayDDMMYYYY();
+
+    let fechaRecepcion = emailData.fecha_recepcion || "";
+    if (!fechaRecepcion && pdfData.fecha_formulario) {
+      fechaRecepcion = pdfData.fecha_formulario.split(" ")[0];
+    }
+
+    let valorRef = emailData.valor_referencia;
+    if (
+      (valorRef === "" || valorRef === null || valorRef === undefined) &&
+      typeof pdfData.importe_presupuestado === "number" &&
+      typeof pdfData.importe_excepcion === "number"
+    ) {
+      valorRef = Number((pdfData.importe_presupuestado - pdfData.importe_excepcion).toFixed(2));
+    }
+
+    const nLlamadoRaw = pdfData.nro_tramite || emailData.tramite_excepcion_body || "";
+    const nLlamado = /^\d+$/.test(String(nLlamadoRaw)) ? parseInt(nLlamadoRaw, 10) : nLlamadoRaw;
+
+    const recordObj = {
+      "Fecha de recepción del mail": fechaRecepcion,
+      "Vigencia desde": pdfData.vigencia_desde || "",
+      "Vigencia hasta": pdfData.vigencia_hasta || "",
+      "Numero_de_Socio": pdfData.numero_socio !== undefined ? pdfData.numero_socio : "",
+      "Numero del socio_integrante":
+        pdfData.numero_integrante !== undefined ? pdfData.numero_integrante : "",
+      "Código del prestador":
+        pdfData.codigo_prestador !== undefined ? pdfData.codigo_prestador : "",
+      "Nombre del prestador": pdfData.nombre_prestador || "",
+      "Número de convenio":
+        emailData.numero_convenio !== undefined && emailData.numero_convenio !== null
+          ? emailData.numero_convenio
+          : "",
+      "Código de la Prestación":
+        pdfData.codigo_prestacion !== undefined ? pdfData.codigo_prestacion : "",
+      "Nombre de la Prestación": pdfData.nombre_prestacion || "",
+      "Valor de referencia": valorRef !== undefined && valorRef !== null ? valorRef : "",
+      "Valor presupuestado":
+        pdfData.importe_presupuestado !== undefined ? pdfData.importe_presupuestado : "",
+      "Valor de la excepción":
+        pdfData.importe_excepcion !== undefined ? pdfData.importe_excepcion : "",
+      "Valor a liquidar":
+        pdfData.importe_a_liquidar !== undefined ? pdfData.importe_a_liquidar : "",
+      "Gerencia autorizante": gerencia,
+      "Usuario de carga": usuario,
+      "Fecha de la carga": fechaCarga,
+      "N_de_llamado": nLlamado,
+      "Tipo_de_excepcion": pdfData.tipo_excepcion || "",
+      "Motivo de la Excepción": pdfData.motivo_excepcion || "",
+      "Autorizaciones si/no?": "",
+      "Detalle": "",
+    };
+
+    return {
+      columns: EXCEL_COLUMNS,
+      dict: recordObj,
+      values: EXCEL_COLUMNS.map((col) => recordObj[col]),
+    };
+  }
+
+  return {
+    EXCEL_COLUMNS,
+    parseFormularioPdfBytes,
+    parseFormularioPdfBlocks,
+    parseEmailBody,
+    buildExcelRecord,
+    parseMoneyAmount,
+    normalizeDateDDMMYYYY,
+  };
+});
+
+  </script>
+  <script>
+/**
+ * Lógica principal de la aplicación web ABM Convenios (Netlify Frontend)
+ */
+(function () {
+  "use strict";
+
+  const COLUMNS = window.SwissParser.EXCEL_COLUMNS;
+
+  const COLUMN_SOURCE_META = {
+    "Fecha de recepción del mail": { tag: "Mail", cls: "source-mail" },
+    "Vigencia desde": { tag: "PDF", cls: "source-pdf" },
+    "Vigencia hasta": { tag: "PDF", cls: "source-pdf" },
+    "Numero_de_Socio": { tag: "PDF", cls: "source-pdf" },
+    "Numero del socio_integrante": { tag: "PDF", cls: "source-pdf" },
+    "Código del prestador": { tag: "PDF", cls: "source-pdf" },
+    "Nombre del prestador": { tag: "PDF", cls: "source-pdf" },
+    "Número de convenio": { tag: "Mail", cls: "source-mail" },
+    "Código de la Prestación": { tag: "PDF", cls: "source-pdf" },
+    "Nombre de la Prestación": { tag: "PDF", cls: "source-pdf", wide: true },
+    "Valor de referencia": { tag: "Mail", cls: "source-mail" },
+    "Valor presupuestado": { tag: "PDF", cls: "source-pdf" },
+    "Valor de la excepción": { tag: "PDF", cls: "source-pdf" },
+    "Valor a liquidar": { tag: "PDF", cls: "source-pdf" },
+    "Gerencia autorizante": { tag: "Auto", cls: "source-auto", wide: true },
+    "Usuario de carga": { tag: "Auto", cls: "source-auto" },
+    "Fecha de la carga": { tag: "Auto", cls: "source-auto" },
+    "N_de_llamado": { tag: "PDF", cls: "source-pdf" },
+    "Tipo_de_excepcion": { tag: "PDF", cls: "source-pdf" },
+    "Motivo de la Excepción": { tag: "PDF", cls: "source-pdf", wide: true },
+    "Autorizaciones si/no?": { tag: "Vacío", cls: "source-auto" },
+    "Detalle": { tag: "Vacío", cls: "source-auto" },
+  };
+
+  // Código completo de Office Script (TypeScript para Excel Online en SharePoint)
+  const OFFICE_SCRIPT_CODE = `/**
+ * Office Script para Excel en SharePoint - Automatización ABM Convenios (Swiss Medical)
+ * Recibe el cuerpo del mail y el PDF adjunto desde Power Automate y agrega la fila en el Excel.
+ */
+function main(
+  workbook: ExcelScript.Workbook,
+  emailBody: string = "",
+  receivedDate: string = "",
+  pdfBase64: string = ""
+) {
+  const rawPdf = decodeBase64ToLatin1(pdfBase64);
+  const blocks = extractBlocksFromPdf(rawPdf);
+  const pdf = parseFormularioBlocks(blocks);
+  const mail = parseEmailBody(emailBody, receivedDate);
+
+  const hoy = formatTodayDDMMYYYY();
+  const fechaRecepcion = mail.fechaRecepcion || (pdf.fechaFormulario ? pdf.fechaFormulario.split(" ")[0] : hoy);
+
+  let valorRef: number | string = mail.valorReferencia;
+  if (valorRef === "" && typeof pdf.importePresupuestado === "number" && typeof pdf.importeExcepcion === "number") {
+    valorRef = Number((pdf.importePresupuestado - pdf.importeExcepcion).toFixed(2));
+  }
+
+  let usuario = "MV";
+  if (pdf.solicitante) {
+    const words = pdf.solicitante.trim().split(/\\s+/);
+    if (words.length >= 2) {
+      usuario = (words[0][0] + words[words.length - 1][0]).toUpperCase();
+    }
+  }
+  const gerencia = mail.gerenciaFirma || "Gerencia de Gestión de Prestadores Interior";
+  const nLlamado = pdf.nroTramite || mail.tramiteBody || "";
+
+  const sheet = workbook.getActiveWorksheet();
+  const usedRange = sheet.getUsedRange();
+  const lastRowIndex = usedRange ? usedRange.getRowCount() : 1;
+
+  // Calcular Número de ingreso (+1 respecto de la fila anterior en Columna A)
+  let nextIngreso: number | string = 1;
+  if (lastRowIndex >= 2) {
+    const prevVal = sheet.getCell(lastRowIndex - 1, 0).getValue();
+    const parsedNum = Number(prevVal);
+    if (!isNaN(parsedNum) && parsedNum > 0) {
+      nextIngreso = parsedNum + 1;
+    }
+  }
+
+  const newRowValues: (string | number)[][] = [[
+    nextIngreso,
+    fechaRecepcion,
+    pdf.vigenciaDesde,
+    pdf.vigenciaHasta,
+    pdf.numeroSocio,
+    pdf.numeroIntegrante,
+    pdf.codigoPrestador,
+    pdf.nombrePrestador,
+    mail.numeroConvenio,
+    pdf.codigoPrestacion,
+    pdf.nombrePrestacion,
+    valorRef,
+    pdf.importePresupuestado,
+    pdf.importeExcepcion,
+    pdf.importeALiquidar,
+    gerencia,
+    usuario,
+    hoy,
+    nLlamado ? Number(nLlamado) : "",
+    pdf.tipoExcepcion,
+    pdf.motivoExcepcion,
+    "",
+    ""
+  ]];
+
+  const tables = sheet.getTables();
+  if (tables.length > 0) {
+    tables[0].addRow(-1, newRowValues[0]);
+  } else {
+    const targetRange = sheet.getRangeByIndexes(lastRowIndex, 0, 1, newRowValues[0].length);
+    targetRange.setValues(newRowValues);
+  }
+}
+
+function decodeBase64ToLatin1(b64: string): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  const clean = (b64 || "").replace(/[^A-Za-z0-9+/=]/g, "");
+  let output = "";
+  let i = 0;
+  while (i < clean.length) {
+    const enc1 = chars.indexOf(clean.charAt(i++));
+    const enc2 = chars.indexOf(clean.charAt(i++));
+    const enc3 = chars.indexOf(clean.charAt(i++));
+    const enc4 = chars.indexOf(clean.charAt(i++));
+    const chr1 = (enc1 << 2) | (enc2 >> 4);
+    const chr2 = ((enc2 & 15) << 4) | (enc3 >> 2);
+    const chr3 = ((enc3 & 3) << 6) | enc4;
+    output += String.fromCharCode(chr1);
+    if (enc3 !== 64 && enc3 !== -1) output += String.fromCharCode(chr2);
+    if (enc4 !== 64 && enc4 !== -1) output += String.fromCharCode(chr3);
+  }
+  return output;
+}
+
+function extractBlocksFromPdf(rawLatin1: string): string[] {
+  const blocks: string[] = [];
+  const streamRegex = /stream\\r?\\n([\\s\\S]*?)\\r?\\nendstream/g;
+  let sm: RegExpExecArray | null;
+  while ((sm = streamRegex.exec(rawLatin1)) !== null) {
+    const content = sm[1];
+    if (content.indexOf("BT") !== -1 && content.indexOf("Tj") !== -1) {
+      const btRegex = /BT\\s+([\\s\\S]*?)\\s+ET/g;
+      let bm: RegExpExecArray | null;
+      while ((bm = btRegex.exec(content)) !== null) {
+        const tjRegex = /\\((.*?)\\)\\s*Tj/g;
+        let tm: RegExpExecArray | null;
+        const parts: string[] = [];
+        while ((tm = tjRegex.exec(bm[1])) !== null) {
+          const clean = tm[1].replace(/\\\\\\(/g, "(").replace(/\\\\\\)/g, ")").replace(/\\s+/g, " ").trim();
+          if (clean) parts.push(clean);
+        }
+        if (parts.length > 0) blocks.push(parts.join(" "));
+      }
+    }
+  }
+  return blocks;
+}
+
+function parseMoney(raw: string): number | string {
+  const cleaned = (raw || "").replace(/[^\\d.,-]/g, "").trim();
+  if (!cleaned) return "";
+  const norm = cleaned.indexOf(",") > cleaned.indexOf(".") && cleaned.indexOf(".") !== -1
+    ? cleaned.replace(/\\./g, "").replace(",", ".")
+    : cleaned.replace(/,/g, "");
+  const num = Number(norm);
+  return isNaN(num) ? "" : num;
+}
+
+function parseFormularioBlocks(blocks: string[]) {
+  const res = {
+    nroTramite: "",
+    fechaFormulario: "",
+    solicitante: "",
+    tipoExcepcion: "Al Prestador",
+    motivoExcepcion: "",
+    codigoPrestador: "" as number | string,
+    nombrePrestador: "",
+    numeroSocio: "" as number | string,
+    numeroIntegrante: "" as number | string,
+    codigoPrestacion: "" as number | string,
+    nombrePrestacion: "",
+    importeExcepcion: "" as number | string,
+    importePresupuestado: "" as number | string,
+    importeALiquidar: "" as number | string,
+    vigenciaDesde: "",
+    vigenciaHasta: ""
+  };
+  let section = "";
+  for (let i = 0; i < blocks.length; i++) {
+    const tok = (blocks[i] || "").trim();
+    const next = i + 1 < blocks.length ? (blocks[i + 1] || "").trim() : "";
+    if (tok === "Datos del Prestador" || tok === "Datos del Afiliado" || tok === "Detalle de la excepción a otorgar") {
+      section = tok;
+      continue;
+    }
+    if (tok === "Nro Trámite:") { res.nroTramite = next; i++; }
+    else if (tok === "Fecha:" && !res.fechaFormulario) { res.fechaFormulario = next; i++; }
+    else if (tok === "Solicitante:") { res.solicitante = next; i++; }
+    else if (tok === "Descripción:") { res.motivoExcepcion = next; i++; }
+    else if (tok === "Código:" && section.indexOf("Prestador") !== -1) { res.codigoPrestador = Number(next) || next; i++; }
+    else if (tok === "Apellido y Nombre / Razón Social:") { res.nombrePrestador = next; i++; }
+    else if (tok === "Contra/Inte:") {
+      const m = next.match(/0*(\\d+)\\s*\\/\\s*0*(\\d+)/);
+      if (m) { res.numeroSocio = Number(m[1]); res.numeroIntegrante = Number(m[2]); }
+      i++;
+    }
+    else if (tok === "Prestación:") {
+      const m = next.match(/^\\s*(\\d+)\\s*-\\s*(.+)$/);
+      if (m) { res.codigoPrestacion = Number(m[1]); res.nombrePrestacion = m[2].trim(); }
+      i++;
+    }
+    else if (tok === "Importe de la excepción:") { res.importeExcepcion = parseMoney(next); i++; }
+    else if (tok === "Importe presupuestado:") { res.importePresupuestado = parseMoney(next); i++; }
+    else if (tok === "Importe a liquidar:") { res.importeALiquidar = parseMoney(next); i++; }
+    else if (tok === "Fecha desde:") { res.vigenciaDesde = next; i++; }
+    else if (tok === "Fecha hasta:") { res.vigenciaHasta = next; i++; }
+  }
+  return res;
+}
+
+function parseEmailBody(body: string, receivedDate: string) {
+  const cleanText = (body || "")
+    .replace(/<\\/(td|th|tr|p|div)>/gi, "\\n")
+    .replace(/<br\\s*\\/?>/gi, "\\n")
+    .replace(/<[^>]+>/g, " ");
+  const tokens = cleanText.split(/\\r?\\n|\\t/).map(s => s.replace(/\\s+/g, " ").trim()).filter(Boolean);
+
+  let numeroConvenio: number | string = "";
+  let valorReferencia: number | string = "";
+  for (let i = 0; i < tokens.length; i++) {
+    if (/Convenio\\s*(?:\\(\\s*1\\s*\\))?/i.test(tokens[i])) {
+      const after = tokens[i].replace(/.*Convenio\\s*(?:\\(\\s*1\\s*\\))?\\s*[:\\-]?/i, "").trim();
+      const mSame = after.match(/^(\\d+)/);
+      if (mSame) numeroConvenio = Number(mSame[1]);
+      else if (i + 1 < tokens.length && !/Valor\\s+de\\s+referencia/i.test(tokens[i + 1])) {
+        const mNext = tokens[i + 1].trim().match(/^(\\d+)\\b/);
+        if (mNext) numeroConvenio = Number(mNext[1]);
+      }
+    }
+    if (/Valor\\s+de\\s+referencia\\s*\\(\\s*2\\s*\\)/i.test(tokens[i])) {
+      const rem = tokens[i].replace(/.*Valor\\s+de\\s+referencia\\s*\\(\\s*2\\s*\\)/i, "");
+      const cands = [rem, tokens[i + 1] || "", tokens[i + 2] || ""];
+      for (const c of cands) {
+        const amt = parseMoney(c.split(/Prestador/i)[0]);
+        if (amt !== "") { valorReferencia = amt; break; }
+      }
+    }
+  }
+  let fechaRecepcion = "";
+  if (receivedDate) {
+    const dt = new Date(receivedDate);
+    if (!isNaN(dt.getTime())) {
+      const d = ("0" + dt.getDate()).slice(-2);
+      const m = ("0" + (dt.getMonth() + 1)).slice(-2);
+      fechaRecepcion = d + "/" + m + "/" + dt.getFullYear();
+    }
+  }
+  return {
+    fechaRecepcion,
+    numeroConvenio,
+    valorReferencia,
+    tramiteBody: "",
+    gerenciaFirma: "Gerencia de Gestión de Prestadores Interior"
+  };
+}
+
+function formatTodayDDMMYYYY(): string {
+  const dt = new Date();
+  const d = ("0" + dt.getDate()).slice(-2);
+  const m = ("0" + (dt.getMonth() + 1)).slice(-2);
+  return d + "/" + m + "/" + dt.getFullYear();
+}`;
+
+  // Estado de la aplicación
+  let currentPdfData = {};
+  let batchRows = [];
+  const previewInputs = {};
+
+  // Elementos del DOM
+  const btnModeManual = document.getElementById("btnModeManual");
+  const btnModeAuto = document.getElementById("btnModeAuto");
+  const autoSetupView = document.getElementById("autoSetupView");
+  const manualAssistView = document.getElementById("manualAssistView");
+
+  const btnCopyExcelScript = document.getElementById("btnCopyExcelScript");
+  const btnToggleScriptPreview = document.getElementById("btnToggleScriptPreview");
+  const excelScriptPre = document.getElementById("excelScriptPre");
+  const btnCopyApiUrl = document.getElementById("btnCopyApiUrl");
+  const apiEndpointUrl = document.getElementById("apiEndpointUrl");
+
+  const decimalSeparatorSelect = document.getElementById("decimalSeparatorSelect");
+  const defaultGerenciaInput = document.getElementById("defaultGerenciaInput");
+  const fechaCargaInput = document.getElementById("fechaCargaInput");
+
+  const pdfDropzone = document.getElementById("pdfDropzone");
+  const pdfFileInput = document.getElementById("pdfFileInput");
+  const pdfStatusTitle = document.getElementById("pdfStatusTitle");
+  const pdfStatusSub = document.getElementById("pdfStatusSub");
+
+  const emailBodyInput = document.getElementById("emailBodyInput");
+  const manualFechaMailInput = document.getElementById("manualFechaMailInput");
+  const manualConvenioInput = document.getElementById("manualConvenioInput");
+  const manualValorRefInput = document.getElementById("manualValorRefInput");
+
+  const previewFieldsGrid = document.getElementById("previewFieldsGrid");
+  const btnAddRow = document.getElementById("btnAddRow");
+  const btnClearInputs = document.getElementById("btnClearInputs");
+
+  const batchTableHeader = document.getElementById("batchTableHeader");
+  const batchTableBody = document.getElementById("batchTableBody");
+  const rowCountBadge = document.getElementById("rowCountBadge");
+  const btnCopyForSharePoint = document.getElementById("btnCopyForSharePoint");
+  const btnCopyWithHeaders = document.getElementById("btnCopyWithHeaders");
+  const btnDownloadXlsx = document.getElementById("btnDownloadXlsx");
+  const btnClearTable = document.getElementById("btnClearTable");
+  const toastBanner = document.getElementById("toastBanner");
+
+  function getTodayDDMMYYYY() {
+    const now = new Date();
+    const d = String(now.getDate()).padStart(2, "0");
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    return `${d}/${m}/${now.getFullYear()}`;
+  }
+
+  function initConfig() {
+    fechaCargaInput.value = getTodayDDMMYYYY();
+    const savedSep = localStorage.getItem("swiss_abm_dec_sep");
+    if (savedSep === "," || savedSep === ".") {
+      decimalSeparatorSelect.value = savedSep;
+    }
+
+    decimalSeparatorSelect.addEventListener("change", () => {
+      localStorage.setItem("swiss_abm_dec_sep", decimalSeparatorSelect.value);
+    });
+    defaultGerenciaInput.addEventListener("input", recomputePreview);
+    fechaCargaInput.addEventListener("input", recomputePreview);
+
+    if (excelScriptPre) {
+      excelScriptPre.textContent = OFFICE_SCRIPT_CODE;
+    }
+    if (apiEndpointUrl && window.location.origin.startsWith("http")) {
+      apiEndpointUrl.textContent = `${window.location.origin}/api/procesar`;
+    }
+  }
+
+  function buildPreviewGrid() {
+    previewFieldsGrid.innerHTML = "";
+    COLUMNS.forEach((col) => {
+      const meta = COLUMN_SOURCE_META[col] || { tag: "Auto", cls: "source-auto" };
+      const wrapper = document.createElement("div");
+      wrapper.className = "preview-field" + (meta.wide ? " wide" : "");
+
+      const label = document.createElement("label");
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = col;
+      const badge = document.createElement("span");
+      badge.className = `source-tag ${meta.cls}`;
+      badge.textContent = meta.tag;
+      label.appendChild(nameSpan);
+      label.appendChild(badge);
+
+      const input = document.createElement("input");
+      input.type = "text";
+      input.dataset.column = col;
+
+      wrapper.appendChild(label);
+      wrapper.appendChild(input);
+      previewFieldsGrid.appendChild(wrapper);
+      previewInputs[col] = input;
+    });
+  }
+
+  function buildBatchTableHeader() {
+    batchTableHeader.innerHTML = "";
+    const thAction = document.createElement("th");
+    thAction.textContent = "#";
+    batchTableHeader.appendChild(thAction);
+
+    COLUMNS.forEach((col) => {
+      const th = document.createElement("th");
+      th.textContent = col;
+      batchTableHeader.appendChild(th);
+    });
+  }
+
+  async function extractPdfFallbackWithPdfJs(arrayBuffer) {
+    if (!window.pdfjsLib) return [];
+    try {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const blocks = [];
+      for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
+        for (const item of textContent.items) {
+          const s = (item.str || "").trim();
+          if (s) blocks.push(s);
+        }
+      }
+      return blocks;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  async function loadPdfBuffer(arrayBuffer, filename) {
+    const uint8 = new Uint8Array(arrayBuffer);
+    const fallbackBlocks = await extractPdfFallbackWithPdfJs(arrayBuffer.slice(0));
+    currentPdfData = window.SwissParser.parseFormularioPdfBytes(uint8, fallbackBlocks);
+
+    pdfDropzone.classList.add("loaded");
+    pdfStatusTitle.innerHTML = `PDF cargado: <strong>${filename}</strong>`;
+    pdfStatusSub.textContent = `Trámite #${currentPdfData.nro_tramite || "-"} | Prestador: ${
+      currentPdfData.codigo_prestador || "-"
+    } ${currentPdfData.nombre_prestador || ""} | Socio: ${currentPdfData.numero_socio || "-"}`;
+
+    recomputePreview();
+  }
+
+  function recomputePreview() {
+    const emailParsed = window.SwissParser.parseEmailBody(emailBodyInput.value, {});
+
+    if (emailParsed.fecha_recepcion && !manualFechaMailInput.dataset.userEdited) {
+      manualFechaMailInput.value = emailParsed.fecha_recepcion;
+    }
+    if (emailParsed.numero_convenio !== "" && !manualConvenioInput.dataset.userEdited) {
+      manualConvenioInput.value = emailParsed.numero_convenio;
+    }
+    if (emailParsed.valor_referencia !== "" && !manualValorRefInput.dataset.userEdited) {
+      manualValorRefInput.value = emailParsed.valor_referencia;
+    }
+
+    const effectiveEmailData = Object.assign({}, emailParsed, {
+      fecha_recepcion:
+        manualFechaMailInput.value.trim() || emailParsed.fecha_recepcion || "",
+      numero_convenio:
+        manualConvenioInput.value.trim() !== ""
+          ? manualConvenioInput.value.trim()
+          : emailParsed.numero_convenio,
+      valor_referencia:
+        manualValorRefInput.value.trim() !== ""
+          ? window.SwissParser.parseMoneyAmount(manualValorRefInput.value)
+          : emailParsed.valor_referencia,
+    });
+
+    const record = window.SwissParser.buildExcelRecord(effectiveEmailData, currentPdfData, {
+      fechaCarga: fechaCargaInput.value.trim() || getTodayDDMMYYYY(),
+      gerenciaAutorizante: defaultGerenciaInput.value.trim(),
+    });
+
+    COLUMNS.forEach((col) => {
+      if (previewInputs[col]) {
+        previewInputs[col].value =
+          record.dict[col] !== undefined && record.dict[col] !== null
+            ? String(record.dict[col])
+            : "";
+      }
+    });
+  }
+
+  function renderBatchTable() {
+    rowCountBadge.textContent = String(batchRows.length);
+    const hasRows = batchRows.length > 0;
+    btnCopyForSharePoint.disabled = !hasRows;
+    btnCopyWithHeaders.disabled = !hasRows;
+    btnDownloadXlsx.disabled = !hasRows;
+    btnClearTable.disabled = !hasRows;
+
+    batchTableBody.innerHTML = "";
+    if (!hasRows) {
+      const tr = document.createElement("tr");
+      tr.className = "empty-row";
+      const td = document.createElement("td");
+      td.colSpan = COLUMNS.length + 1;
+      td.textContent =
+        "Todavía no hay filas en el lote. Subí un archivo PDF y pegá el cuerpo del mail en el Paso 1.";
+      tr.appendChild(td);
+      batchTableBody.appendChild(tr);
+      return;
+    }
+
+    batchRows.forEach((rowObj, rowIdx) => {
+      const tr = document.createElement("tr");
+
+      const tdDel = document.createElement("td");
+      const btnDel = document.createElement("button");
+      btnDel.className = "btn-delete-row";
+      btnDel.title = "Eliminar fila";
+      btnDel.textContent = "×";
+      btnDel.addEventListener("click", () => {
+        batchRows.splice(rowIdx, 1);
+        renderBatchTable();
+      });
+      tdDel.appendChild(btnDel);
+      tr.appendChild(tdDel);
+
+      COLUMNS.forEach((col) => {
+        const td = document.createElement("td");
+        td.textContent = rowObj[col] !== undefined && rowObj[col] !== null ? String(rowObj[col]) : "";
+        tr.appendChild(td);
+      });
+
+      batchTableBody.appendChild(tr);
+    });
+  }
+
+  
+  async function safeCopyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return;
+      } catch (e) {}
+    }
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    document.execCommand("copy");
+    document.body.removeChild(ta);
+  }
+
+  function showToast(message) {
+    toastBanner.textContent = message;
+    toastBanner.classList.remove("hidden");
+    setTimeout(() => {
+      toastBanner.classList.add("hidden");
+    }, 4500);
+  }
+
+  function formatCellForClipboard(value, colName) {
+    if (value === null || value === undefined || value === "") return "";
+    const str = String(value).trim();
+    const moneyCols = [
+      "Valor de referencia",
+      "Valor presupuestado",
+      "Valor de la excepción",
+      "Valor a liquidar",
+    ];
+    if (moneyCols.includes(colName)) {
+      const num = Number(str.replace(",", "."));
+      if (Number.isFinite(num)) {
+        const decSep = decimalSeparatorSelect.value;
+        const formatted = num.toFixed(2);
+        return decSep === "," ? formatted.replace(".", ",") : formatted;
+      }
+    }
+    return str.replace(/[\t\r\n]+/g, " ");
+  }
+
+  async function copyTableToClipboard(includeHeaders) {
+    if (batchRows.length === 0) return;
+    const lines = [];
+    if (includeHeaders) {
+      lines.push(COLUMNS.join("\t"));
+    }
+    for (const rowObj of batchRows) {
+      const rowCells = COLUMNS.map((col) => formatCellForClipboard(rowObj[col], col));
+      lines.push(rowCells.join("\t"));
+    }
+    const tsv = lines.join("\r\n");
+    await safeCopyText(tsv);
+    showToast(
+      `¡${batchRows.length} fila(s) copiada(s)! Andá al Excel de SharePoint, parate en la celda 'Fecha de recepción del mail' de la fila nueva y presioná Ctrl + V.`
+    );
+  }
+
+  function downloadExcelFile() {
+    if (batchRows.length === 0 || !window.XLSX) return;
+    const aoa = [COLUMNS];
+    for (const rowObj of batchRows) {
+      aoa.push(
+        COLUMNS.map((col) => {
+          const val = rowObj[col];
+          if (val === "") return "";
+          if (/^\d+(\.\d+)?$/.test(String(val))) {
+            return Number(val);
+          }
+          return val;
+        })
+      );
+    }
+    const ws = window.XLSX.utils.aoa_to_sheet(aoa);
+    const wb = window.XLSX.utils.book_new();
+    window.XLSX.utils.book_append_sheet(wb, ws, "Excepciones");
+    window.XLSX.writeFile(wb, `Excepciones_ABM_${getTodayDDMMYYYY().replace(/\//g, "-")}.xlsx`);
+  }
+
+  function clearInputs() {
+    currentPdfData = {};
+    pdfDropzone.classList.remove("loaded");
+    pdfStatusTitle.innerHTML =
+      'Arrastrá acá el archivo <strong>.PDF</strong> adjunto ("Formulario de Excepciones")';
+    pdfStatusSub.textContent = "O hacé clic para seleccionarlo desde tu computadora";
+    pdfFileInput.value = "";
+    emailBodyInput.value = "";
+    manualFechaMailInput.value = "";
+    manualConvenioInput.value = "";
+    manualValorRefInput.value = "";
+    delete manualFechaMailInput.dataset.userEdited;
+    delete manualConvenioInput.dataset.userEdited;
+    delete manualValorRefInput.dataset.userEdited;
+    recomputePreview();
+  }
+
+  // Navegación entre modo Manual Asistido y Guía 100% Automático
+  btnModeManual.addEventListener("click", () => {
+    btnModeManual.classList.add("active");
+    btnModeAuto.classList.remove("active");
+    manualAssistView.classList.remove("hidden");
+    autoSetupView.classList.add("hidden");
+  });
+
+  btnModeAuto.addEventListener("click", () => {
+    btnModeAuto.classList.add("active");
+    btnModeManual.classList.remove("active");
+    autoSetupView.classList.remove("hidden");
+    manualAssistView.classList.add("hidden");
+  });
+
+  document.querySelectorAll(".method-tab").forEach((tabBtn) => {
+    tabBtn.addEventListener("click", () => {
+      document.querySelectorAll(".method-tab").forEach((b) => b.classList.remove("active"));
+      document.querySelectorAll(".method-content").forEach((c) => c.classList.add("hidden"));
+      tabBtn.classList.add("active");
+      const targetId = tabBtn.getAttribute("data-target");
+      const targetEl = document.getElementById(targetId);
+      if (targetEl) targetEl.classList.remove("hidden");
+    });
+  });
+
+  if (btnCopyExcelScript) {
+    btnCopyExcelScript.addEventListener("click", async () => {
+      await safeCopyText(OFFICE_SCRIPT_CODE);
+      showToast(
+        "¡Código para Excel copiado! Ahora pegalo con Ctrl + V en la pestaña 'Automatizar -> Nuevo script' de tu Excel en SharePoint."
+      );
+    });
+  }
+
+  if (btnToggleScriptPreview) {
+    btnToggleScriptPreview.addEventListener("click", () => {
+      excelScriptPre.classList.toggle("hidden");
+    });
+  }
+
+  if (btnCopyApiUrl) {
+    btnCopyApiUrl.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(apiEndpointUrl.textContent);
+      showToast("URL del conector copiada al portapapeles.");
+    });
+  }
+
+  // Eventos del cargador
+  pdfDropzone.addEventListener("click", () => pdfFileInput.click());
+  pdfDropzone.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    pdfDropzone.classList.add("dragover");
+  });
+  pdfDropzone.addEventListener("dragleave", () => {
+    pdfDropzone.classList.remove("dragover");
+  });
+  pdfDropzone.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    pdfDropzone.classList.remove("dragover");
+    const file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (file) {
+      const buf = await file.arrayBuffer();
+      await loadPdfBuffer(buf, file.name);
+    }
+  });
+
+  pdfFileInput.addEventListener("change", async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      const buf = await file.arrayBuffer();
+      await loadPdfBuffer(buf, file.name);
+    }
+  });
+
+  emailBodyInput.addEventListener("input", () => {
+    delete manualFechaMailInput.dataset.userEdited;
+    delete manualConvenioInput.dataset.userEdited;
+    delete manualValorRefInput.dataset.userEdited;
+    recomputePreview();
+  });
+
+  manualFechaMailInput.addEventListener("input", () => {
+    manualFechaMailInput.dataset.userEdited = "1";
+    recomputePreview();
+  });
+  manualConvenioInput.addEventListener("input", () => {
+    manualConvenioInput.dataset.userEdited = "1";
+    recomputePreview();
+  });
+  manualValorRefInput.addEventListener("input", () => {
+    manualValorRefInput.dataset.userEdited = "1";
+    recomputePreview();
+  });
+
+  btnClearInputs.addEventListener("click", clearInputs);
+
+  btnAddRow.addEventListener("click", () => {
+    const rowObj = {};
+    COLUMNS.forEach((col) => {
+      rowObj[col] = previewInputs[col] ? previewInputs[col].value.trim() : "";
+    });
+    batchRows.push(rowObj);
+    renderBatchTable();
+
+    showToast(
+      `Fila agregada a la tabla de carga (Trámite #${rowObj["N_de_llamado"] || "-"}).`
+    );
+    clearInputs();
+  });
+
+  btnCopyForSharePoint.addEventListener("click", () => copyTableToClipboard(false));
+  btnCopyWithHeaders.addEventListener("click", () => copyTableToClipboard(true));
+  btnDownloadXlsx.addEventListener("click", downloadExcelFile);
+  btnClearTable.addEventListener("click", () => {
+    batchRows = [];
+    renderBatchTable();
+  });
+
+  // Inicializar
+  buildPreviewGrid();
+  buildBatchTableHeader();
+  initConfig();
+  recomputePreview();
+})();
+
+  </script>
+</body>
+</html>
