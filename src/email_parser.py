@@ -152,16 +152,18 @@ def parse_email_body(
 
     # 1. Extraer Número de convenio ("Convenio (1)")
     for idx, tok in enumerate(tokens):
-        if re.search(r"Convenio\s*\(\s*1\s*\)", tok, re.I):
-            # Puede estar en el mismo token ("Convenio (1) 12421") o en la siguiente celda de la tabla
-            m_same = re.search(r"Convenio\s*\(\s*1\s*\)\s*[:\-]?\s*(\d+)", tok, re.I)
+        if re.search(r"Convenio\s*(?:\(\s*1\s*\))?", tok, re.I):
+            # Puede estar en el mismo token ("Convenio (1) 12160 (I)") o en la siguiente celda/línea
+            after_label = re.sub(r".*Convenio\s*(?:\(\s*1\s*\))?\s*[:\-]?", "", tok, flags=re.I).strip()
+            m_same = re.match(r"^(\d+)\b", after_label)
             if m_same:
                 result.numero_convenio = int(m_same.group(1))
                 break
-            if idx + 1 < len(tokens):
+            if idx + 1 < len(tokens) and not re.search(r"Valor\s+de\s+referencia", tokens[idx + 1], re.I):
                 next_tok = tokens[idx + 1].strip()
-                if re.match(r"^\d+$", next_tok):
-                    result.numero_convenio = int(next_tok)
+                m_next = re.match(r"^(\d+)\b", next_tok)
+                if m_next:
+                    result.numero_convenio = int(m_next.group(1))
                     break
 
     # 2. Extraer Valor de referencia ("Valor de referencia (2)")

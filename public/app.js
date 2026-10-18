@@ -230,10 +230,14 @@ function parseEmailBody(body: string, receivedDate: string) {
   let numeroConvenio: number | string = "";
   let valorReferencia: number | string = "";
   for (let i = 0; i < tokens.length; i++) {
-    if (/Convenio\\s*\\(\\s*1\\s*\\)/i.test(tokens[i])) {
-      const m = tokens[i].match(/Convenio\\s*\\(\\s*1\\s*\\)\\s*(\\d+)/i);
-      if (m) numeroConvenio = Number(m[1]);
-      else if (i + 1 < tokens.length && /^\\d+$/.test(tokens[i + 1])) numeroConvenio = Number(tokens[i + 1]);
+    if (/Convenio\\s*(?:\\(\\s*1\\s*\\))?/i.test(tokens[i])) {
+      const after = tokens[i].replace(/.*Convenio\\s*(?:\\(\\s*1\\s*\\))?\\s*[:\\-]?/i, "").trim();
+      const mSame = after.match(/^(\\d+)/);
+      if (mSame) numeroConvenio = Number(mSame[1]);
+      else if (i + 1 < tokens.length && !/Valor\\s+de\\s+referencia/i.test(tokens[i + 1])) {
+        const mNext = tokens[i + 1].trim().match(/^(\\d+)\\b/);
+        if (mNext) numeroConvenio = Number(mNext[1]);
+      }
     }
     if (/Valor\\s+de\\s+referencia\\s*\\(\\s*2\\s*\\)/i.test(tokens[i])) {
       const rem = tokens[i].replace(/.*Valor\\s+de\\s+referencia\\s*\\(\\s*2\\s*\\)/i, "");

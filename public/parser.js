@@ -393,15 +393,19 @@
     // 1. Convenio (1)
     for (let idx = 0; idx < tokens.length; idx++) {
       const tok = tokens[idx];
-      if (/Convenio\s*\(\s*1\s*\)/i.test(tok)) {
-        const mSame = tok.match(/Convenio\s*\(\s*1\s*\)\s*[:\-]?\s*(\d+)/i);
+      if (/Convenio\s*(?:\(\s*1\s*\))?/i.test(tok)) {
+        const afterLabel = tok.replace(/.*Convenio\s*(?:\(\s*1\s*\))?\s*[:\-]?/i, "").trim();
+        const mSame = afterLabel.match(/^(\d+)/);
         if (mSame) {
           result.numero_convenio = parseInt(mSame[1], 10);
           break;
         }
-        if (idx + 1 < tokens.length && /^\d+$/.test(tokens[idx + 1])) {
-          result.numero_convenio = parseInt(tokens[idx + 1], 10);
-          break;
+        if (idx + 1 < tokens.length && !/Valor\s+de\s+referencia/i.test(tokens[idx + 1])) {
+          const mNext = tokens[idx + 1].trim().match(/^(\d+)\b/);
+          if (mNext) {
+            result.numero_convenio = parseInt(mNext[1], 10);
+            break;
+          }
         }
       }
     }
