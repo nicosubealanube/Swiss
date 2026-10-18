@@ -44,18 +44,11 @@ body {
   gap: 14px;
 }
 
-.swiss-badge {
-  width: 42px;
-  height: 42px;
-  border-radius: 8px;
-  background: var(--sm-red);
-  color: #fff;
-  font-weight: 800;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  letter-spacing: 0.5px;
+.swiss-logo {
+  height: 44px;
+  width: auto;
+  object-fit: contain;
+  display: block;
 }
 
 .topbar h1 {
